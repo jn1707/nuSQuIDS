@@ -460,8 +460,8 @@ EXMAPLES_FLAGS=-I$(INCnuSQUIDS) $(CXXFLAGS) $(CFLAGS)
 
 # Project files
 NAME=nuSQuIDS
-STAT_PRODUCT=lib/lib$(NAME).a
-DYN_PRODUCT=lib/lib$(NAME)$(DYN_SUFFIX)
+STAT_PRODUCT=$(PATH_nuSQUIDS)/lib/lib$(NAME).a
+DYN_PRODUCT=$(PATH_nuSQUIDS)/lib/lib$(NAME)$(DYN_SUFFIX)
 
 # Compilation rules
 all: $(STAT_PRODUCT) $(DYN_PRODUCT)
