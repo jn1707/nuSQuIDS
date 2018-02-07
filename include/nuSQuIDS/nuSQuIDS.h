@@ -1795,6 +1795,14 @@ class nuSQUIDSAtm {
       }
     }
   
+    /// \brief Stes Earth object to be use.    
+    /// @param bodu Shared pointer to Body object.
+    void Set_Body(std::shared_ptr<Body> body){
+      for(BaseSQUIDS& nsq : nusq_array){
+        nsq.Set_Body(body);
+      }
+    }
+
     /// \brief Returns the neutrino interaction cross sections
     std::shared_ptr<NeutrinoCrossSections> GetNeutrinoCrossSections(){
       return(ncs);
