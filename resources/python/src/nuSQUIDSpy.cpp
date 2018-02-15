@@ -34,6 +34,8 @@
 #include <SQuIDS/SQuIDS.h>
 #include <nuSQuIDS/nuSQuIDS.h>
 #include <nuSQuIDS/marray.h>
+//#include <nuSQuIDS/Decoherence.h>
+#include <nuSQuIDS/nuSQuIDSDecoh.h>
 
 #include <numpy/ndarrayobject.h>
 #include <numpy/ndarraytypes.h>
@@ -433,6 +435,67 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("GetERange",&nuSQUIDSAtm<>::GetERange)
     .def("GetCosthRange",&nuSQUIDSAtm<>::GetCosthRange)
   ;
+
+  /*
+  class_<Decoherence, boost::noncopyable, std::shared_ptr<Decoherence> >("Decoherence",init<unsigned int, unsigned int, double, double>())
+    .def("Get_flux",&Decoherence::Get_flux)
+    .def("Evolve",&Decoherence::Evolve)
+  ;
+  */
+
+
+  // TODO Need to remove function overloads for NT != 3 from here
+  class_<nuSQUIDSDecoh, boost::noncopyable, std::shared_ptr<nuSQUIDSDecoh> >("nuSQUIDSDecoh",no_init)
+    //.def(init<unsigned int,NeutrinoType>(args("numneu","NT")))
+    .def(init<NeutrinoType>(args("NT")))
+    .def("Set_initial_state",(void(nuSQUIDSDecoh::*)(const marray<double,1>&, Basis))&nuSQUIDSDecoh::Set_initial_state,nuSQUIDS_Set_initial_state())
+    .def("Set_initial_state",(void(nuSQUIDSDecoh::*)(const marray<double,2>&, Basis))&nuSQUIDSDecoh::Set_initial_state,nuSQUIDS_Set_initial_state())
+    .def("Set_initial_state",(void(nuSQUIDSDecoh::*)(const marray<double,3>&, Basis))&nuSQUIDSDecoh::Set_initial_state,nuSQUIDS_Set_initial_state())
+    .def("Set_Body",&nuSQUIDSDecoh::Set_Body, bp::arg("Body"))
+    .def("Set_Track",&nuSQUIDSDecoh::Set_Track, bp::arg("Track"))
+    .def("Set_E",&nuSQUIDSDecoh::Set_E, bp::arg("NeutrinoEnergy"))
+    .def("EvolveState",&nuSQUIDSDecoh::EvolveState)
+    .def("GetERange",&nuSQUIDSDecoh::GetERange)
+    .def("WriteStateHDF5",&nuSQUIDSDecoh::WriteStateHDF5,
+        nuSQUIDS_HDF5Write_overload(args("hdf5_filename","group"," save_cross_sections","cross_section_grp_loc"),
+          "Writes the current nuSQUIDSDecoh object into an HDF5 file."))
+    .def("ReadStateHDF5",wrap_ReadStateHDF5,
+        nuSQUIDS_HDF5Read_overload(args("hdf5_filename","group","cross_section_grp_loc"),
+          "Reads an HDF5 file and loads the contents into the current object."))
+    .def("GetNumNeu",&nuSQUIDSDecoh::GetNumNeu)
+    .def("EvalMass",(double(nuSQUIDSDecoh::*)(unsigned int) const)&nuSQUIDSDecoh::EvalMass)
+    .def("EvalFlavor",(double(nuSQUIDSDecoh::*)(unsigned int) const)&nuSQUIDSDecoh::EvalFlavor)
+    .def("EvalMass",(double(nuSQUIDSDecoh::*)(unsigned int,double,unsigned int) const)&nuSQUIDSDecoh::EvalMass)
+    .def("EvalFlavor",(double(nuSQUIDSDecoh::*)(unsigned int,double,unsigned int) const)&nuSQUIDSDecoh::EvalFlavor)
+    .def("EvalMassAtNode",(double(nuSQUIDSDecoh::*)(unsigned int,unsigned int,unsigned int) const)&nuSQUIDSDecoh::EvalMassAtNode)
+    .def("EvalFlavorAtNode",(double(nuSQUIDSDecoh::*)(unsigned int,unsigned int,unsigned int) const)&nuSQUIDSDecoh::EvalFlavorAtNode)
+    .def("GetHamiltonian",&nuSQUIDSDecoh::GetHamiltonian)
+    //.def("GetState",&nuSQUIDSDecoh::GetState)
+    .def("Set_h_min",&nuSQUIDSDecoh::Set_h_min)
+    .def("Set_h_max",&nuSQUIDSDecoh::Set_h_max)
+    .def("Set_h",&nuSQUIDSDecoh::Set_h)
+    .def("Set_rel_error",&nuSQUIDSDecoh::Set_rel_error)
+    .def("Set_abs_error",&nuSQUIDSDecoh::Set_abs_error)
+    .def("Set_AdaptiveStep",&nuSQUIDSDecoh::Set_AdaptiveStep)
+    .def("Set_GSL_step",wrap_Set_GSL_STEP)
+    .def("Set_AnyNumerics",&nuSQUIDSDecoh::Set_AnyNumerics)
+    .def("Set_TauRegeneration",&nuSQUIDSDecoh::Set_TauRegeneration)
+    .def("Set_ProgressBar",&nuSQUIDSDecoh::Set_ProgressBar)
+    .def("Set_MixingParametersToDefault",&nuSQUIDSDecoh::Set_MixingParametersToDefault)
+    .def("Set_Basis",&nuSQUIDSDecoh::Set_Basis)
+    .def("Set_MixingAngle",&nuSQUIDSDecoh::Set_MixingAngle)
+    .def("Get_MixingAngle",&nuSQUIDSDecoh::Get_MixingAngle)
+    .def("Set_CPPhase",&nuSQUIDSDecoh::Set_CPPhase)
+    .def("Get_CPPhase",&nuSQUIDSDecoh::Get_CPPhase)
+    .def("Set_SquareMassDifference",&nuSQUIDSDecoh::Set_SquareMassDifference)
+    .def("Get_SquareMassDifference",&nuSQUIDSDecoh::Get_SquareMassDifference)
+    .def("GetTrack",&nuSQUIDSDecoh::GetTrack)
+    .def("GetBody",&nuSQUIDSDecoh::GetBody)
+    .def("GetNumE",&nuSQUIDSDecoh::GetNumE)
+    .def("GetNumRho",&nuSQUIDSDecoh::GetNumRho)
+    .def("Set_Debug",&nuSQUIDSDecoh::Set_Debug)
+    .def("Set_DecoherenceParam",&nuSQUIDSDecoh::Set_DecoherenceParam)
+    ;
 
 
   class_<squids::Const, boost::noncopyable>("Const")

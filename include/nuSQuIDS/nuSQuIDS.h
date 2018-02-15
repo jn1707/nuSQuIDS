@@ -957,6 +957,7 @@ protected:
     /// @param debug_ Boolean that toggles debuging on and off.
     void Set_Debug(bool debug_){
       debug = debug_;
+      SQuIDS::Set_Debug(debug_);
     }
 
     /// \brief Returns lepton mixing matrix

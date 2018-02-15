@@ -1022,6 +1022,7 @@ void nuSQUIDS::EvolveState(){
     Set_h((-1.0)*Get_h());
   }
 
+  /* //TODO Need to fix this for decoherence case. This if statement doesn't handle decoherence + vacuum case
   if ( body->IsConstantDensity() and not iinteraction ){
     // when only oscillations are considered and the density is constant
     // we can ju st rotate the system to the propagation eigenstates
@@ -1054,6 +1055,7 @@ void nuSQUIDS::EvolveState(){
       ProgressBar();
     return;
   }
+  */
 
   if(positivization){
     int positivization_steps = static_cast<int>((track->GetFinalX() - track->GetInitialX())/positivization_scale);
