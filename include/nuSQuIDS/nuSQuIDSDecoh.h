@@ -3,6 +3,8 @@ Implementing a neutrino decoherence model in SQuIDS/nuSQuIDS
 Tom Stuttard, Mikkel Jensen (Niels Bohr Institute)
 */
 
+//TODO Create a .cpp file
+
 
 #ifndef NUSQUIDSDECOH_H
 #define NUSQUIDSDECOH_H
@@ -11,26 +13,27 @@ Tom Stuttard, Mikkel Jensen (Niels Bohr Institute)
 
 using namespace nusquids;
 
+// Currently only supporting 3 flavor case
+const unsigned int NUM_NU_FLAVORS_DECOH = 3;
+
 class nuSQUIDSDecoh: public nuSQUIDS {
 
   public:
 
+    // Constructor : Single energy mode
     nuSQUIDSDecoh(NeutrinoType NT = neutrino)
-      : nuSQUIDS(3,NT)
-      , decoherence_matrix{std::vector<double>{0.,0.,0.,  0.,0.,0.,  0.,0.,0.}}
-      {
+      : nuSQUIDS(NUM_NU_FLAVORS_DECOH,NT)
+      , decoherence_matrix(NUM_NU_FLAVORS_DECOH)
+    { init(); }
 
-      //init(); //TODO Think is is already called by the nuSQUIDS constructor so should be able to remove it
+    // Constructor : Multi-energy mode
+    nuSQUIDSDecoh(marray<double,1> E_vector, NeutrinoType NT = both,
+       bool iinteraction = false, std::shared_ptr<NeutrinoCrossSections> ncs = nullptr)
+      : nuSQUIDS(E_vector,NUM_NU_FLAVORS_DECOH,NT,iinteraction,ncs)
+      , decoherence_matrix(NUM_NU_FLAVORS_DECOH)
+    { init(); }
 
-      //TODO Add interactions
-
-      // Enable deocherence term in the nuSQuIDS numerical solver
-      Set_DecoherenceTerms(true);
-
-    }
   
-   // void Set_DecoherenceParam(double opt) { decoherenceParam = opt; }
-
     // Set the decoherence matrix elements (set each individually)
     void Set_DecoherenceMatrix(const marray<double,2>& dmat) {//, Basis basis = flavor) {  //TODO specify basis?
 
@@ -47,7 +50,6 @@ class nuSQUIDSDecoh: public nuSQUIDS {
           decoherence_matrix[k] = dmat[i][j];
         }
       }
-
 
     }
 
@@ -76,6 +78,20 @@ class nuSQUIDSDecoh: public nuSQUIDS {
         }
       }
       return dmat;
+    }
+
+
+  protected:
+
+    // Common initialisation tasks
+    void init() {
+
+      // Enable deocherence term in the nuSQuIDS numerical solver
+      Set_DecoherenceTerms(true);
+
+      // By default use an empty deocherene matrix
+      decoherence_matrix.SetAllComponents(0.); 
+
     }
 
 
