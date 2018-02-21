@@ -16,6 +16,11 @@ namespace nusquids{
 // Currently only supporting 3 flavor case
 const unsigned int NUM_NU_FLAVORS_DECOH = 3;
 
+
+/*
+  nuSQuIDS extedned to include decohernece
+*/
+
 class nuSQUIDSDecoh: public nuSQUIDS {
 
   public:
@@ -61,6 +66,22 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     squids::SU_vector DecohGamma(unsigned int ei,unsigned int index_rho, double t) const override;
 
 };
+
+
+/*
+  nuSQUIDSAtm extended to include decoherence
+*/
+
+class nuSQUIDSAtmDecoh : public nuSQUIDSAtm<nuSQUIDSDecoh> {
+
+  public:
+
+    // Use the base class constructors
+    using nuSQUIDSAtm<nuSQUIDSDecoh>::nuSQUIDSAtm;
+
+};
+
+
 
 } // close namespace
 

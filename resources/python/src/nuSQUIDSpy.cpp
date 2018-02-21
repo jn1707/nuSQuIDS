@@ -298,6 +298,7 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(nuSQUIDSAtm_EvalFlavor_overload,EvalFlavo
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(nuSQUIDS_Set_initial_state,nuSQUIDS::Set_initial_state,1,2)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(nuSQUIDSAtm_Set_initial_state,nuSQUIDSAtm<>::Set_initial_state,1,2)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(nuSQUIDSAtmDecoh_Set_initial_state,nuSQUIDSAtmDecoh::Set_initial_state,1,2)
 
 // nuSQUIDSpy module definitions
 
@@ -501,6 +502,46 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("Set_DecoherenceMatrix",(void(nuSQUIDSDecoh::*)(double,double,double))&nuSQUIDSDecoh::Set_DecoherenceMatrix)
     .def("Get_DecoherenceMatrix",&nuSQUIDSDecoh::Get_DecoherenceMatrix)
     ;
+
+
+  class_<nuSQUIDSAtmDecoh, boost::noncopyable, std::shared_ptr<nuSQUIDSAtmDecoh> >("nuSQUIDSAtmDecoh", no_init)
+    .def(init<marray<double,1>,marray<double,1>,NeutrinoType>(args("CosZenith_vector","E_vector","NT")))
+    .def(init<marray<double,1>,marray<double,1>,NeutrinoType,bool>(args("CosZenith_vector","E_vector","NT","iinteraction")))
+    .def(init<marray<double,1>,marray<double,1>,NeutrinoType,bool,std::shared_ptr<NeutrinoCrossSections>>(args("CosZenith_vector","E_vector","NT","iinteraction","ncs")))
+    .def(init<std::string>(args("filename")))
+    .def("EvolveState",&nuSQUIDSAtmDecoh::EvolveState)
+    .def("Set_TauRegeneration",&nuSQUIDSAtmDecoh::Set_TauRegeneration)
+    //.def("EvalFlavor",&nuSQUIDSAtmDecoh::EvalFlavor)
+    .def("EvalFlavor",(double(nuSQUIDSAtmDecoh::*)(unsigned int,double,double,unsigned int,bool) const)&nuSQUIDSAtmDecoh::EvalFlavor,
+        nuSQUIDSAtm_EvalFlavor_overload(args("Flavor","cos(theta)","Neutrino Energy","NeuType","BoolToRandomzeProdutionHeight"),
+          "Reads an HDF5 file and loads the contents into the current object."))
+    .def("Set_EvalThreads",&nuSQUIDSAtmDecoh::Set_EvalThreads)
+    .def("Get_EvalThreads",&nuSQUIDSAtmDecoh::Get_EvalThreads)
+    .def("Set_EarthModel",&nuSQUIDSAtmDecoh::Set_EarthModel)
+    .def("Set_Body",&nuSQUIDSAtmDecoh::Set_Body)
+    .def("WriteStateHDF5",&nuSQUIDSAtmDecoh::WriteStateHDF5)
+    .def("ReadStateHDF5",&nuSQUIDSAtmDecoh::ReadStateHDF5)
+    .def("Set_MixingAngle",&nuSQUIDSAtmDecoh::Set_MixingAngle)
+    .def("Set_CPPhase",&nuSQUIDSAtmDecoh::Set_CPPhase)
+    .def("Set_SquareMassDifference",&nuSQUIDSAtmDecoh::Set_SquareMassDifference)
+    .def("Set_ProgressBar",&nuSQUIDSAtmDecoh::Set_ProgressBar)
+    .def("Set_MixingParametersToDefault",&nuSQUIDSAtmDecoh::Set_MixingParametersToDefault)
+    .def("Set_GSL_step",wrap_nusqatm_Set_GSL_STEP)
+    .def("Set_rel_error",(void(nuSQUIDSAtmDecoh::*)(double))&nuSQUIDSAtmDecoh::Set_rel_error)
+    .def("Set_rel_error",(void(nuSQUIDSAtmDecoh::*)(double, unsigned int))&nuSQUIDSAtmDecoh::Set_rel_error)
+    .def("Set_abs_error",(void(nuSQUIDSAtmDecoh::*)(double))&nuSQUIDSAtmDecoh::Set_abs_error)
+    .def("Set_abs_error",(void(nuSQUIDSAtmDecoh::*)(double, unsigned int))&nuSQUIDSAtmDecoh::Set_abs_error)
+    .def("GetNumE",&nuSQUIDSAtmDecoh::GetNumE)
+    .def("GetNumCos",&nuSQUIDSAtmDecoh::GetNumCos)
+    .def("GetNumNeu",&nuSQUIDSAtmDecoh::GetNumNeu)
+    .def("GetNumRho",&nuSQUIDSAtmDecoh::GetNumRho)
+    //.def("EvalMass",(double(nuSQUIDS::*)(unsigned int,double,unsigned int) const)&nuSQUIDS::EvalMass)
+    .def("GetnuSQuIDS",(nuSQUIDSDecoh&(nuSQUIDSAtmDecoh::*)(unsigned int))&nuSQUIDSAtmDecoh::GetnuSQuIDS,boost::python::return_internal_reference<>())
+    .def("Set_initial_state",(void(nuSQUIDSAtmDecoh::*)(const marray<double,3>&, Basis))&nuSQUIDSAtmDecoh::Set_initial_state,nuSQUIDSAtmDecoh_Set_initial_state())
+    .def("Set_initial_state",(void(nuSQUIDSAtmDecoh::*)(const marray<double,4>&, Basis))&nuSQUIDSAtmDecoh::Set_initial_state,nuSQUIDSAtmDecoh_Set_initial_state())
+    .def("GetERange",&nuSQUIDSAtmDecoh::GetERange)
+    .def("GetCosthRange",&nuSQUIDSAtmDecoh::GetCosthRange)
+  ;
 
 
   class_<squids::Const, boost::noncopyable>("Const")
