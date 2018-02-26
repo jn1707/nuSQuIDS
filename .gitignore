@@ -11,6 +11,7 @@
 # Compiled Dynamic libraries
 *.so
 *.dylib
+*.dylib.dSYM
 *.dll
 
 # Fortran module files
@@ -34,3 +35,15 @@
 *.pc
 
 Makefile
+
+# tex
+*eps-converted-to.pdf
+*.aux
+*.bbl
+*.blg
+*.log
+*.spl
+*.toc
+
+# ipython notebook
+.ipynb_checkpoints/

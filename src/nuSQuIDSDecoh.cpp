@@ -13,11 +13,21 @@ namespace nusquids{
 // Common initialisation tasks
 void nuSQUIDSDecoh::init() {
 
-  // Enable deocherence term in the nuSQuIDS numerical solver
+  // Currently 3 flavors (could extend this if neeed, but not supported yet)
+  if ( numneu != 3 )
+    throw std::runtime_error("nuSQUIDSDecoh::Error::Only currently supporting 3 neutrino flavors");
+
+  // Enable decoherence term in the nuSQuIDS numerical solver
   Set_DecoherenceTerms(true);
 
-  // By default use an empty deocherene matrix
-  decoherence_matrix.SetAllComponents(0.); 
+  // Initialise the decoherence matrix //TODO Is thre a simpelr way to do this?
+  marray<double,2> tmp_dmat{numneu,numneu};
+  for( unsigned int i = 0 ; i < numneu ; ++i ) {
+    for( unsigned int j = 0 ; j < numneu ; ++j ) {
+      tmp_dmat[i][j] = 0.;
+    }
+  }
+  Set_DecoherenceMatrix(tmp_dmat);
 
 }
 
@@ -31,13 +41,48 @@ void nuSQUIDSDecoh::Set_DecoherenceMatrix(const marray<double,2>& dmat) {//, Bas
       throw std::runtime_error("nuSQUIDSDecoh::Error:Input decoherence matrix has wrong dimensions in dimension " + std::to_string(dim) + " (found " + std::to_string(dmat.extent(dim))+ ", should be " + std::to_string(numneu) + ")" );
   }
 
-  // Update decoherence matrix /TDO Is ther a more efficient way to set the elements of a SU_vector?
+  //TODO Do I need to use this GSL stuff here? I took this from the NSI example, ask Carlos about this...
+#if 0
+  // Defining a complex matrix M to contain our decoherence parameterisation // Does it need to be complex?
+  gsl_matrix_complex * M = gsl_matrix_complex_calloc(numneu,numneu);
+
+  // Loop over matrix elements (2D)
+  for( unsigned int i = 0 ; i < numneu ; ++i ) {
+    for( unsigned int j = 0 ; j < numneu ; ++j ) {
+
+      // Write this element to the matrix
+      gsl_complex c {{ dmat[i][j] , 0.0 }}; //Only using real part right now
+      std::cout << "Setting [" << i << "," << j << "] = " << GSL_REAL(c) << std::endl;
+      gsl_matrix_complex_set(M,i,j,c); // TODO there is a gsl_complex_conjugate method, could be useful...
+
+    }
+  }
+
+  // Update the SU(N) vector from the matrix   
+  decoherence_matrix = squids::SU_vector(M);
+
+  for(int i = 0 ; i< 9 ; i++ ) {
+    std::cout << "Found in SU(3) [" << i << "] = " << decoherence_matrix[i] << std::endl;
+  }
+
+  // TODO SU_Vector seems to be missing data here????
+
+  // Done with the matrix now
+  gsl_matrix_complex_free(M);
+#endif
+
+#if 1
+  // Update decoherence matrix // TODO Is ther a more efficient way to set the elements of a SU_vector?
   for( unsigned int i = 0 ; i < numneu ; ++i ) {
     for( unsigned int j = 0 ; j < numneu ; ++j ) {
       unsigned int k = (i*numneu) + j;
       decoherence_matrix[k] = dmat[i][j];
     }
   }
+#endif
+
+  // TODO rotate to mass basis?
+  //decoherence_matrix.RotateToB1(params);
 
 }
 
@@ -45,6 +90,7 @@ void nuSQUIDSDecoh::Set_DecoherenceMatrix(const marray<double,2>& dmat) {//, Bas
 // Set the decoherence matrix elements using the Gamma21,31,32 model
 // See https://arxiv.org/pdf/1708.05495.pdf equation 12
 void nuSQUIDSDecoh::Set_DecoherenceMatrix(double Gamma21,double Gamma31,double Gamma32) {//, Basis basis = flavor) {  //TODO specify basis?
+  // TODO UPDATE TO USE GSL MATRIX STUFF
   decoherence_matrix[0] = 0.; //Is there a more efficient way to do this?
   decoherence_matrix[1] = Gamma21;
   decoherence_matrix[2] = Gamma31;
@@ -75,9 +121,6 @@ marray<double,2> nuSQUIDSDecoh::Get_DecoherenceMatrix() const {
 // Function to return the Gamma decoherence matrix (basically D[rho] without the rho part)
 // TODO Can I access the rho part here?
 squids::SU_vector nuSQUIDSDecoh::DecohGamma(unsigned int ei,unsigned int index_rho, double t) const {
-  //TODO Should this be rotated to the flavor basis?????
-  //squids::SU_vector decoherenceMatrix{ std::vector<double>{ decoherenceParam,0.,0., 0.,decoherenceParam,0., 0.,0.,decoherenceParam } };
-  //squids::SU_vector decoherenceMatrix{ std::vector<double>{ 0.,decoherenceParam,decoherenceParam, decoherenceParam,0.,decoherenceParam, decoherenceParam,decoherenceParam,0. } };
   return decoherence_matrix;
 }
 

@@ -444,14 +444,12 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
   ;
   */
 
-
   // TODO Need to remove function overloads for NT != 3 from here
   class_<nuSQUIDSDecoh, boost::noncopyable, std::shared_ptr<nuSQUIDSDecoh> >("nuSQUIDSDecoh",no_init)
-    //.def(init<unsigned int,NeutrinoType>(args("numneu","NT")))
-    .def(init<NeutrinoType>(args("NT")))
-    .def(init<marray<double,1>,NeutrinoType>(args("E_vector","NT")))
-    .def(init<marray<double,1>,NeutrinoType,bool>(args("E_vector","NT","iinteraction")))
-    .def(init<marray<double,1>,NeutrinoType,bool,std::shared_ptr<NeutrinoCrossSections>>(args("E_vector","NT","iinteraction","ncs")))
+    .def(init<unsigned int,NeutrinoType>(args("numneu","NT")))
+    .def(init<marray<double,1>,unsigned int,NeutrinoType>(args("E_vector","numneu","NT")))
+    .def(init<marray<double,1>,unsigned int,NeutrinoType,bool>(args("E_vector","numneu","NT","iinteraction")))
+    .def(init<marray<double,1>,unsigned int,NeutrinoType,bool,std::shared_ptr<NeutrinoCrossSections>>(args("E_vector","numneu","NT","iinteraction","ncs")))
     .def("Set_initial_state",(void(nuSQUIDSDecoh::*)(const marray<double,1>&, Basis))&nuSQUIDSDecoh::Set_initial_state,nuSQUIDS_Set_initial_state())
     .def("Set_initial_state",(void(nuSQUIDSDecoh::*)(const marray<double,2>&, Basis))&nuSQUIDSDecoh::Set_initial_state,nuSQUIDS_Set_initial_state())
     .def("Set_initial_state",(void(nuSQUIDSDecoh::*)(const marray<double,3>&, Basis))&nuSQUIDSDecoh::Set_initial_state,nuSQUIDS_Set_initial_state())
@@ -505,9 +503,9 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
 
 
   class_<nuSQUIDSAtmDecoh, boost::noncopyable, std::shared_ptr<nuSQUIDSAtmDecoh> >("nuSQUIDSAtmDecoh", no_init)
-    .def(init<marray<double,1>,marray<double,1>,NeutrinoType>(args("CosZenith_vector","E_vector","NT")))
-    .def(init<marray<double,1>,marray<double,1>,NeutrinoType,bool>(args("CosZenith_vector","E_vector","NT","iinteraction")))
-    .def(init<marray<double,1>,marray<double,1>,NeutrinoType,bool,std::shared_ptr<NeutrinoCrossSections>>(args("CosZenith_vector","E_vector","NT","iinteraction","ncs")))
+    .def(init<marray<double,1>,marray<double,1>,unsigned int,NeutrinoType>(args("CosZenith_vector","E_vector","numneu","NT")))
+    .def(init<marray<double,1>,marray<double,1>,unsigned int,NeutrinoType,bool>(args("CosZenith_vector","E_vector","numneu","NT","iinteraction")))
+    .def(init<marray<double,1>,marray<double,1>,unsigned int,NeutrinoType,bool,std::shared_ptr<NeutrinoCrossSections>>(args("CosZenith_vector","E_vector","numneu","NT","iinteraction","ncs")))
     .def(init<std::string>(args("filename")))
     .def("EvolveState",&nuSQUIDSAtmDecoh::EvolveState)
     .def("Set_TauRegeneration",&nuSQUIDSAtmDecoh::Set_TauRegeneration)
@@ -541,8 +539,11 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("Set_initial_state",(void(nuSQUIDSAtmDecoh::*)(const marray<double,4>&, Basis))&nuSQUIDSAtmDecoh::Set_initial_state,nuSQUIDSAtmDecoh_Set_initial_state())
     .def("GetERange",&nuSQUIDSAtmDecoh::GetERange)
     .def("GetCosthRange",&nuSQUIDSAtmDecoh::GetCosthRange)
+    .def("Set_DecoherenceMatrix",(void(nuSQUIDSAtmDecoh::*)(const marray<double,2>&))&nuSQUIDSAtmDecoh::Set_DecoherenceMatrix)
+    .def("Set_DecoherenceMatrix",(void(nuSQUIDSAtmDecoh::*)(double,double,double))&nuSQUIDSAtmDecoh::Set_DecoherenceMatrix)
+    .def("Get_DecoherenceMatrix",&nuSQUIDSAtmDecoh::Get_DecoherenceMatrix)
+    .def("Set_Debug",&nuSQUIDSAtmDecoh::Set_Debug)
   ;
-
 
   class_<squids::Const, boost::noncopyable>("Const")
     .def_readonly("TeV",&squids::Const::TeV)

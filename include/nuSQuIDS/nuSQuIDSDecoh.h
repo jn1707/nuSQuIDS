@@ -13,9 +13,6 @@ Tom Stuttard, Mikkel Jensen (Niels Bohr Institute)
 
 namespace nusquids{
 
-// Currently only supporting 3 flavor case
-const unsigned int NUM_NU_FLAVORS_DECOH = 3;
-
 
 /*
   nuSQuIDS extedned to include decohernece
@@ -23,25 +20,32 @@ const unsigned int NUM_NU_FLAVORS_DECOH = 3;
 
 class nuSQUIDSDecoh: public nuSQUIDS {
 
+
   public:
 
+    //Default void constructor (required by boost python).
+    nuSQUIDSDecoh(){}
+
     // Constructor : Single energy mode
-    nuSQUIDSDecoh(NeutrinoType NT = neutrino)
-      : nuSQUIDS(NUM_NU_FLAVORS_DECOH,NT)
-      , decoherence_matrix(NUM_NU_FLAVORS_DECOH)
+    nuSQUIDSDecoh(unsigned int numneu, NeutrinoType NT = neutrino)
+      : nuSQUIDS(numneu,NT)
+      , decoherence_matrix(numneu)
+//      , hiBuffer(new double[nsun*nsun])  //TODO REMOVE, RENAME
     { init(); }
 
     // Constructor : Multi-energy mode
-    nuSQUIDSDecoh(marray<double,1> E_vector, NeutrinoType NT = both,
+    nuSQUIDSDecoh(marray<double,1> E_vector, unsigned int numneu, NeutrinoType NT = both,
        bool iinteraction = false, std::shared_ptr<NeutrinoCrossSections> ncs = nullptr)
-      : nuSQUIDS(E_vector,NUM_NU_FLAVORS_DECOH,NT,iinteraction,ncs)
-      , decoherence_matrix(NUM_NU_FLAVORS_DECOH)
+      : nuSQUIDS(E_vector,numneu,NT,iinteraction,ncs)
+      , decoherence_matrix(numneu)
+//      , hiBuffer(new double[nsun*nsun])  //TODO REMOVE, RENAME
     { init(); }
+
+    // TODO Copy and move constructors...
 
   
     // Set the decoherence matrix elements (set each individually)
     void Set_DecoherenceMatrix(const marray<double,2>& dmat);
-
 
     // Set the decoherence matrix elements using the Gamma21,31,32 model
     // See https://arxiv.org/pdf/1708.05495.pdf equation 12
@@ -65,6 +69,8 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     // TODO Can I access the rho part here?
     squids::SU_vector DecohGamma(unsigned int ei,unsigned int index_rho, double t) const override;
 
+//    std::unique_ptr<double[]> hiBuffer; //TODO REMOVE, RENAME
+
 };
 
 
@@ -78,6 +84,27 @@ class nuSQUIDSAtmDecoh : public nuSQUIDSAtm<nuSQUIDSDecoh> {
 
     // Use the base class constructors
     using nuSQUIDSAtm<nuSQUIDSDecoh>::nuSQUIDSAtm;
+
+    // TODO Copy and move constructors...
+
+    // Wrap debug setter
+    void Set_Debug(bool debug) {
+      for(nuSQUIDSDecoh& nsq : nusq_array) nsq.Set_Debug(debug);
+    }
+
+    // Wrap decoherence matrix getters/setters
+    void Set_DecoherenceMatrix(const marray<double,2>& dmat) {
+      for(nuSQUIDSDecoh& nsq : nusq_array) nsq.Set_DecoherenceMatrix(dmat);
+    }
+
+    void Set_DecoherenceMatrix(double Gamma21,double Gamma31,double Gamma32) {
+      for(nuSQUIDSDecoh& nsq : nusq_array) nsq.Set_DecoherenceMatrix(Gamma21,Gamma31,Gamma32);
+    }
+
+    marray<double,2> Get_DecoherenceMatrix() const {
+      return nusq_array[0].Get_DecoherenceMatrix();
+    }
+
 
 };
 

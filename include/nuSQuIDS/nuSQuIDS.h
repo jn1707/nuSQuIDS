@@ -987,6 +987,11 @@ template<typename BaseType = nuSQUIDS, typename = typename std::enable_if<std::i
 class nuSQUIDSAtm {
   public:
     using BaseSQUIDS = BaseType;
+
+  protected:
+    /// \brief Contains the nuSQUIDS objects for each zenith.
+    std::vector<BaseSQUIDS> nusq_array; // TODO Had to make this protected so that a derived class could use it, need to check if this is OK before any merging
+
   private:
     /// \brief Random number generator
     gsl_rng * r_gsl;
@@ -1012,8 +1017,6 @@ class nuSQUIDSAtm {
     marray<double,1> enu_array;
     /// \brief Contains the log of energy nodes (in log of eV).
     marray<double,1> log_enu_array;
-    /// \brief Contains the nuSQUIDS objects for each zenith.
-    std::vector<BaseSQUIDS> nusq_array;
 
     /// \brief Contains the Earth in atmospheric configuration.
     std::shared_ptr<EarthAtm> earth_atm;
@@ -1044,6 +1047,7 @@ class nuSQUIDSAtm {
     costh_array(costh_array),
     evalThreads(1)
     {
+
       gsl_rng_env_setup();
       const gsl_rng_type * T_gsl = gsl_rng_default;
       r_gsl = gsl_rng_alloc (T_gsl);
@@ -1052,6 +1056,7 @@ class nuSQUIDSAtm {
       for(double costh : costh_array)
         track_array.push_back(std::make_shared<EarthAtm::Track>(acos(costh)));
 
+      //nusq_array.reserve(costh_array.extent(0));
       for(unsigned int i = 0; i < costh_array.extent(0); i++){
         nusq_array.emplace_back(args...);
         nusq_array.back().Set_Body(earth_atm);
@@ -1317,7 +1322,7 @@ class nuSQUIDSAtm {
       //coefficients for energy interpolation
       double f2=(enu-enu_array[loge_M])/(enu_array[loge_M+1]-enu_array[loge_M]);
       double f1=1-f2;
-      
+    
       storage.temp1 =f1*nusq_array[cth_M  ].GetState(loge_M  ,rho);
       storage.temp1+=f2*nusq_array[cth_M  ].GetState(loge_M+1,rho);
       storage.temp2=storage.temp1.Evolve(H0_at_enu,t_inter - nusq_array[cth_M  ].Get_t());
@@ -1327,7 +1332,7 @@ class nuSQUIDSAtm {
       storage.temp1+=f2*nusq_array[cth_M+1].GetState(loge_M+1,rho);
       storage.temp2=storage.temp1.Evolve(H0_at_enu,t_inter - nusq_array[cth_M+1].Get_t());
       double phiP=squids::SUTrace<squids::detail::AlignedStorage>(storage.temp2,storage.evol_proj);
-      
+
       //perform angular interpolation
       return(LinInter(costh,costh_array[cth_M],costh_array[cth_M+1],phiM,phiP));
     }
@@ -1418,7 +1423,7 @@ class nuSQUIDSAtm {
       H0_at_enu.PrepareEvolve(evol_buffer.get(),t_inter - nusq_array[cth_M  ].Get_t(),scale,avr);
       storage.temp2=storage.temp1.Evolve(evol_buffer.get());
       double phiM=squids::SUTrace<squids::detail::AlignedStorage>(storage.temp2,storage.evol_proj);
-      
+
       storage.temp1 =f1*nusq_array[cth_M+1].GetState(loge_M  ,rho);
       storage.temp1+=f2*nusq_array[cth_M+1].GetState(loge_M+1,rho);
       H0_at_enu.PrepareEvolve(evol_buffer.get(),t_inter - nusq_array[cth_M+1].Get_t(),scale,avr);
