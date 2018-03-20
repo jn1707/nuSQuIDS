@@ -496,9 +496,9 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("GetNumE",&nuSQUIDSDecoh::GetNumE)
     .def("GetNumRho",&nuSQUIDSDecoh::GetNumRho)
     .def("Set_Debug",&nuSQUIDSDecoh::Set_Debug)
-    .def("Set_DecoherenceMatrix",(void(nuSQUIDSDecoh::*)(const marray<double,2>&))&nuSQUIDSDecoh::Set_DecoherenceMatrix)
-    .def("Set_DecoherenceMatrix",(void(nuSQUIDSDecoh::*)(double,double,double))&nuSQUIDSDecoh::Set_DecoherenceMatrix)
-    .def("Get_DecoherenceMatrix",&nuSQUIDSDecoh::Get_DecoherenceMatrix)
+    .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(const marray<double,2>&))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix)
+    .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(double,double,double))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix)
+    .def("Get_DecoherenceGammaMatrix",&nuSQUIDSDecoh::Get_DecoherenceGammaMatrix)
     ;
 
 
@@ -539,9 +539,9 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("Set_initial_state",(void(nuSQUIDSAtmDecoh::*)(const marray<double,4>&, Basis))&nuSQUIDSAtmDecoh::Set_initial_state,nuSQUIDSAtmDecoh_Set_initial_state())
     .def("GetERange",&nuSQUIDSAtmDecoh::GetERange)
     .def("GetCosthRange",&nuSQUIDSAtmDecoh::GetCosthRange)
-    .def("Set_DecoherenceMatrix",(void(nuSQUIDSAtmDecoh::*)(const marray<double,2>&))&nuSQUIDSAtmDecoh::Set_DecoherenceMatrix)
-    .def("Set_DecoherenceMatrix",(void(nuSQUIDSAtmDecoh::*)(double,double,double))&nuSQUIDSAtmDecoh::Set_DecoherenceMatrix)
-    .def("Get_DecoherenceMatrix",&nuSQUIDSAtmDecoh::Get_DecoherenceMatrix)
+    .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSAtmDecoh::*)(const marray<double,2>&))&nuSQUIDSAtmDecoh::Set_DecoherenceGammaMatrix)
+    .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSAtmDecoh::*)(double,double,double))&nuSQUIDSAtmDecoh::Set_DecoherenceGammaMatrix)
+    .def("Get_DecoherenceGammaMatrix",&nuSQUIDSAtmDecoh::Get_DecoherenceGammaMatrix)
     .def("Set_Debug",&nuSQUIDSAtmDecoh::Set_Debug)
   ;
 
