@@ -5,20 +5,32 @@ Tom Stuttard, Mikkel Jensen (Niels Bohr Institute)
 
 #include <nuSQuIDS/nuSQuIDSDecoh.h>
 
+
+//TODO Put this somewhere, proper const correctness, etc
+void print_gsl_matrix(gsl_matrix_complex* matrix) {
+  for (size_t i = 0; i < matrix->size1; i++) {
+    for (size_t j = 0; j < matrix->size2; j++) {
+      std::cout << GSL_REAL(gsl_matrix_complex_get(matrix, i, j)) << " "; 
+    }
+    std::cout << std::endl;
+  }
+}
+
+
 namespace nusquids{
 
 
 // Common initialisation tasks
 void nuSQUIDSDecoh::init() {
 
-  // Currently 3 flavors (could extend this if neeed, but not supported yet)
+  // Currently 3 flavors (could extend this if needed, but not supported yet)
   if ( numneu != 3 )
     throw std::runtime_error("nuSQUIDSDecoh::Error::Only currently supporting 3 neutrino flavors");
 
   // Enable decoherence term in the nuSQuIDS numerical solver
   Set_DecoherenceTerms(true);
 
-  // Initialise the decoherence matrix //TODO Is thre a simpelr way to do this?
+  // Initialise the decoherence matrix //TODO Is thre a simpler way to do this?
   marray<double,2> tmp_dmat{numneu,numneu};
   for( unsigned int i = 0 ; i < numneu ; ++i ) {
     for( unsigned int j = 0 ; j < numneu ; ++j ) {
@@ -26,6 +38,14 @@ void nuSQUIDSDecoh::init() {
     }
   }
   Set_DecoherenceGammaMatrix(tmp_dmat);
+
+  // Init interaction basis gamma matrices
+#if 0
+  decoherence_gamma_matrix_evol.resize(ne);
+  for(int ei = 0; ei < ne; ei++){
+    decoherence_gamma_matrix_evol[ei] = squids::SU_vector(nsun);
+  }
+#endif
 
 }
 
@@ -39,7 +59,6 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//
   }
 
   //TODO Do I need to use this GSL stuff here? I took this from the NSI example, ask Carlos about this...
-#if 0
   // Defining a complex matrix M to contain our decoherence parameterisation // Does it need to be complex?
   gsl_matrix_complex * M = gsl_matrix_complex_calloc(numneu,numneu);
 
@@ -55,20 +74,18 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//
     }
   }
 
+  decoherence_gamma_gsl_matrix.reset(M);
+
   // Update the SU(N) vector from the matrix   
   decoherence_gamma_matrix = squids::SU_vector(M);
 
-  for(int i = 0 ; i< 9 ; i++ ) {
-    std::cout << "Found in SU(3) [" << i << "] = " << decoherence_gamma_matrix[i] << std::endl;
-  }
-
-  // TODO SU_Vector seems to be missing data here????
-
+  // TODO rotate to basis
+  //decoherence_gamma_matrix.RotateToB1(params);
+  
   // Done with the matrix now
-  gsl_matrix_complex_free(M);
-#endif
+  //gsl_matrix_complex_free(M); //TODO
 
-#if 1
+#if 0
   // Update decoherence matrix // TODO Is ther a more efficient way to set the elements of a SU_vector?
   for( unsigned int i = 0 ; i < numneu ; ++i ) {
     for( unsigned int j = 0 ; j < numneu ; ++j ) {
@@ -78,28 +95,32 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//
   }
 #endif
 
-  // TODO rotate to basis
-  //decoherence_gamma_matrix.RotateToB1(params);
+  //if(print) std::cout << "+++ decoherence_gamma_matrix = " << std::endl; //TODO REMOVE
+
 
 }
 
 
 void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(double Gamma21,double Gamma31,double Gamma32) {//, Basis basis = flavor) {  //TODO specify basis
-  // TODO Instead call Set_DecoherenceGammaMatrix(array) so that anythign clever that function does with memory is used here
-  decoherence_gamma_matrix[0] = 0.; //Is there a more efficient way to do this?
-  decoherence_gamma_matrix[1] = Gamma21;
-  decoherence_gamma_matrix[2] = Gamma31;
-  decoherence_gamma_matrix[3] = Gamma21;
-  decoherence_gamma_matrix[4] = 0.;
-  decoherence_gamma_matrix[5] = Gamma32;
-  decoherence_gamma_matrix[6] = Gamma31;
-  decoherence_gamma_matrix[7] = Gamma32;
-  decoherence_gamma_matrix[8] = 0.;
+  //TODO Is there a more efficient way to do this?
+  marray<double,2> dmat{3,3};
+  dmat[0][0] = 0.;
+  dmat[0][1] = Gamma21;
+  dmat[0][2] = Gamma31;
+  dmat[1][0] = Gamma21;
+  dmat[1][1] = 0.;
+  dmat[1][2] = Gamma32;
+  dmat[2][0] = Gamma31;
+  dmat[2][1] = Gamma32;
+  dmat[2][2] = 0.;
+  Set_DecoherenceGammaMatrix(dmat);
 }
 
 
 // Get the current value of the decoherence matrix
+// This is not used as part of the main solver, just for user scripts
 marray<double,2> nuSQUIDSDecoh::Get_DecoherenceGammaMatrix() const {
+  auto decoherence_gamma_gsl_matrix = decoherence_gamma_matrix.GetGSLMatrix();
   marray<double,2> dmat{numneu,numneu};
   for( unsigned int i = 0 ; i < numneu ; ++i ) { //TODO Do this in a more efficient way
     for( unsigned int j = 0 ; j < numneu ; ++j ) {
@@ -111,9 +132,102 @@ marray<double,2> nuSQUIDSDecoh::Get_DecoherenceGammaMatrix() const {
 }
 
 
-squids::SU_vector nuSQUIDSDecoh::DecohGamma(unsigned int ei,unsigned int index_rho, double t) const {
-  return decoherence_gamma_matrix;
+squids::SU_vector nuSQUIDSDecoh::D_Rho(unsigned int ei,unsigned int index_rho, double t) const {
+
+  // This function returns the D[rho] dissipation/decoheence term
+  // It gets used like: drho/dt = -i[H,rho] - D[rho]
+  // D[rho] is a NxN matrix (N is num neutrino flavors) where each element is: D[rho]_ij = rho_i,j * Gamma_i,j
+
+  // Define shifts between mass and interaction basis
+  double int_to_mass_basis_time_shift = Get_t_initial() - t; // Backwards in time from t to t0
+  double mass_to_int_basis_time_shift = t - Get_t_initial(); // Forwards in time from t0 to t
+//  double int_to_mass_basis_time_shift = t - Get_t_initial();
+//  double mass_to_int_basis_time_shift = Get_t_initial() - t;
+
+//TODO need to decide how to do this: This version rotates rho to the mass basis for the calculation, the D[rho] back to the interaction basis
+#if 1
+  std::vector<double> D_rho_buffer_mass_basis(nsun*nsun); //TODO Member
+
+  // Get the Gamma matrix elements (mass basis)
+  auto gamma_mass_basis = decoherence_gamma_matrix.GetComponents(); //TODO Is this a waste of a memory allocation?
+
+  // Get rho and rotate from interaction to mass basis
+  squids::SU_vector rho_evol = estate[ei].rho[index_rho].Evolve(H0_array[ei],int_to_mass_basis_time_shift);
+  auto rho_mass_basis = rho_evol.GetComponents();
+
+  // Multiply the Gamma and rho matrices element-wise to get D[rho]
+  //TODO Does this SU vector element-wise multiplication do the same thing multiplying the elements in the standard 3x3 GSL matrix?
+  for( unsigned int i = 0 ; i < (nsun*nsun) ; ++i ) {
+      D_rho_buffer_mass_basis[i] = rho_mass_basis[i] * gamma_mass_basis[i];
+  }
+  squids::SU_vector D_rho_mass_basis(D_rho_buffer_mass_basis);
+
+  // Rotate D[rho] to from the mass basis to the interaction basis //TODO Is this definitely mathemetically valid?
+  squids::SU_vector D_rho_int_basis = D_rho_mass_basis.Evolve(H0_array[ei],mass_to_int_basis_time_shift);
+#endif
+
+
+//TODO need to decide how to do this: This version rotates gamma to the interaction basis for the calculation
+#if 0
+  std::vector<double> D_rho_buffer_int_basis(nsun*nsun); //TODO Member
+
+  // Get rho in the interactio  basis (it already is)
+  auto rho_int_basis = estate[ei].rho[index_rho];
+
+  // Rotate Gamma matrix to interaction basis
+  //TODO Do this in `PreDerive` instead for efficiency
+  squids::SU_vector gamma_evol = decoherence_gamma_matrix.Evolve(H0_array[ei],mass_to_int_basis_time_shift);
+  auto gamma_int_basis = gamma_evol.GetComponents();
+
+  // Multiply the Gamma and rho matrices element-wise to get D[rho]
+  //TODO Does this SU vector element-wise multiplication do the same thing multiplying the elements in the standard 3x3 GSL matrix?
+  for( unsigned int i = 0 ; i < (nsun*nsun) ; ++i ) {
+      D_rho_buffer_int_basis[i] = rho_int_basis[i] * gamma_int_basis[i];
+  }
+  squids::SU_vector D_rho_int_basis(D_rho_buffer_int_basis);
+#endif
+
+
+
+// This is how to do the rho * Gamma elementwise calculation using GSL amtrix instead of SU_vector //TODO Remove this once sure don't need it
+#if 0
+  //TODO state or estate?
+  // Convert rho to mass basis (from interaction basis) //TODO PreDerive, e.g. only once
+  //squids::SU_vector state_reversal = estate[ei].rho[index_rho].Evolve(H0_array[ei],first_shift);
+  squids::SU_vector& state_reversal = estate[ei].rho[index_rho]; //TODO REMOVE
+
+  auto rho_matrix_mass_basis = state_reversal.GetGSLMatrix();
+  if(print) std::cout << "rho :" << std::endl;
+  if(print) print_gsl_matrix(rho_matrix_mass_basis.get());
+
+  auto D_rho_matrix_mass_basis = state_reversal.GetGSLMatrix();
+
+  //TODO Use a GSL buffer D_Rho
+  for( unsigned int i = 0 ; i < numneu ; ++i ) { //TODO Do this in a more efficient way
+    for( unsigned int j = 0 ; j < numneu ; ++j ) {
+      gsl_complex D_rho_ij{{ GSL_REAL(gsl_matrix_complex_get(decoherence_gamma_gsl_matrix.get(),i,j)) * GSL_REAL(gsl_matrix_complex_get(rho_matrix_mass_basis.get(),i,j)), 0. }};
+      gsl_matrix_complex_set(D_rho_matrix_mass_basis.get(),i,j,D_rho_ij);
+    }
+  }
+  if(print) std::cout << "D[rho] :" << std::endl;
+  if(print) print_gsl_matrix(D_rho_matrix_mass_basis.get());
+
+  squids::SU_vector D_rho(D_rho_matrix_mass_basis.get());
+#endif
+
+
+  return D_rho_int_basis;
 }
+
+
+#if 0
+void nuSQUIDSDecoh::AddToPreDerive(double x){
+  for(int ei = 0; ei < ne; ei++){
+    // Get the gamma matrix in the interaction basis
+    decoherence_gamma_matrix_evol[ei] = decoherence_gamma_matrix.Evolve(H0_array[ei],(x-Get_t_initial())); // mass basis -> interaction basis
+  }
+}
+#endif
 
 
 } // close namespace
