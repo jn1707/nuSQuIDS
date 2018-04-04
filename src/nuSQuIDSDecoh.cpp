@@ -26,7 +26,7 @@ void nuSQUIDSDecoh::init() {
   // TODO REMOVE???
   // For now want to calculate in the mass basis as is simpler
   // WARNING: There is no splined interpolation between energy nodes (maybe also coszen?) in the mass basis
-  Set_Basis(mass);
+  //Set_Basis(mass);
 
   // Currently 3 flavors (could extend this if needed, but not supported yet)
   if ( numneu != 3 )
