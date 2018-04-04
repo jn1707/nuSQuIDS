@@ -55,6 +55,16 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     marray<double,2> Get_DecoherenceGammaMatrix() const;
 
 
+    //TODO REMOVE
+    //TODO REMOVE
+    //TODO REMOVE
+    void PrintTransformationMatrix() const;
+    void PrintState() const;
+    //TODO REMOVE
+    //TODO REMOVE
+    //TODO REMOVE
+
+
   protected:
 
     // Common initialisation tasks
@@ -79,7 +89,7 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     void AddToPreDerive(double x) override;
     std::vector<squids::SU_vector> decoherence_gamma_matrix_evol;
 #endif
-    
+
 };
 
 

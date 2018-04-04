@@ -499,6 +499,8 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(const marray<double,2>&))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix)
     .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(double,double,double))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix)
     .def("Get_DecoherenceGammaMatrix",&nuSQUIDSDecoh::Get_DecoherenceGammaMatrix)
+    .def("PrintTransformationMatrix",&nuSQUIDSDecoh::PrintTransformationMatrix)
+    .def("PrintState",&nuSQUIDSDecoh::PrintState)
     ;
 
 
