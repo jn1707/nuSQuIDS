@@ -73,7 +73,7 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//
 
       // Write this element to the matrix
       gsl_complex c {{ dmat[i][j] , 0.0 }}; //Only using real part right now
-      std::cout << "Setting [" << i << "," << j << "] = " << GSL_REAL(c) << std::endl;
+      //std::cout << "Setting [" << i << "," << j << "] = " << GSL_REAL(c) << std::endl;
       gsl_matrix_complex_set(M,i,j,c); // TODO there is a gsl_complex_conjugate method, could be useful...
 
     }
@@ -107,7 +107,7 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//
 
 
 void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(double Gamma21,double Gamma31,double Gamma32) {//, Basis basis = flavor) {  //TODO specify basis
-  //TODO Is there a more efficient way to do this?
+  //TODO Is there a more efficient way to do this (is part of the PISA minimizer so is called multiple times)?
   marray<double,2> dmat{3,3};
   dmat[0][0] = 0.;
   dmat[0][1] = Gamma21;
@@ -210,17 +210,16 @@ squids::SU_vector nuSQUIDSDecoh::D_Rho(unsigned int ei,unsigned int index_rho, d
 //TODO I don't think this should work as I'm not handling the bases at all here, but somehow it seems to exactly match my solver. What is going on!?!
 //TODO Perhaps my gamma matrix is automatically converted to the correct basis when I create the SU_vector? 
 #if 1
-  std::vector<double> D_rho_buffer_tmp(nsun*nsun); //TODO Member
 
-  // Get the Gamma matrix elements (mass basis)
-  auto gamma = decoherence_gamma_matrix.GetComponents(); //TODO Is this a waste of a memory allocation?
-
+  // Element-wise SU vector multiplication //TODO replace with Chris' new function
+  std::vector<double> D_rho_vect(nsun*nsun); //Cannot use a member since the function is constant
+  auto gamma = decoherence_gamma_matrix.GetComponents();
   auto rho = estate[ei].rho[index_rho].GetComponents();
-
   for( unsigned int i = 0 ; i < (nsun*nsun) ; ++i ) {
-      D_rho_buffer_tmp[i] = rho[i] * gamma[i];
+      D_rho_vect[i] = rho[i] * gamma[i];
   }
-  squids::SU_vector D_rho_val(D_rho_buffer_tmp);
+  squids::SU_vector D_rho_val(D_rho_vect);
+
   return D_rho_val;
 
 #endif

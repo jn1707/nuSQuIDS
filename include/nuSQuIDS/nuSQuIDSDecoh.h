@@ -30,7 +30,6 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     nuSQUIDSDecoh(unsigned int numneu, NeutrinoType NT = neutrino)
       : nuSQUIDS(numneu,NT)
       , decoherence_gamma_matrix(numneu)
-      , D_rho_buffer(numneu*numneu)
     { init(); }
 
     // Constructor : Multi-energy mode
@@ -38,7 +37,6 @@ class nuSQUIDSDecoh: public nuSQUIDS {
        bool iinteraction = false, std::shared_ptr<NeutrinoCrossSections> ncs = nullptr)
       : nuSQUIDS(E_vector,numneu,NT,iinteraction,ncs)
       , decoherence_gamma_matrix(numneu)
-      , D_rho_buffer(numneu*numneu)
     { init(); }
 
     // TODO Copy and move constructors...
@@ -77,9 +75,6 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     // which also supports the Gamma21,Gamma31,Gamma32 model when the correct setter is used
     squids::SU_vector decoherence_gamma_matrix; //TODO Is this the correct type to store this as?
     std::unique_ptr<gsl_matrix_complex> decoherence_gamma_gsl_matrix;
-
-    // Intermediate buffer for holding D[rho] elements
-    std::vector<double> D_rho_buffer; 
 
     // Function to return D[rho] (result of decohernce operator on rho)
     squids::SU_vector D_Rho(unsigned int ei,unsigned int index_rho, double t) const override;
