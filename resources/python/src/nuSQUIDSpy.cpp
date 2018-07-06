@@ -499,6 +499,8 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(const marray<double,2>&))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix)
     .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(double,double,double))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix)
     .def("Get_DecoherenceGammaMatrix",&nuSQUIDSDecoh::Get_DecoherenceGammaMatrix)
+    .def("Set_EnergyDependence",&nuSQUIDSDecoh::Set_EnergyDependence)
+    .def("Get_EnergyDependence",&nuSQUIDSDecoh::Get_EnergyDependence)
     .def("PrintTransformationMatrix",&nuSQUIDSDecoh::PrintTransformationMatrix)
     .def("PrintState",&nuSQUIDSDecoh::PrintState)
     ;
@@ -544,6 +546,8 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSAtmDecoh::*)(const marray<double,2>&))&nuSQUIDSAtmDecoh::Set_DecoherenceGammaMatrix)
     .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSAtmDecoh::*)(double,double,double))&nuSQUIDSAtmDecoh::Set_DecoherenceGammaMatrix)
     .def("Get_DecoherenceGammaMatrix",&nuSQUIDSAtmDecoh::Get_DecoherenceGammaMatrix)
+    .def("Set_EnergyDependence",&nuSQUIDSAtmDecoh::Set_EnergyDependence)
+    .def("Get_EnergyDependence",&nuSQUIDSAtmDecoh::Get_EnergyDependence)
     .def("Set_Debug",&nuSQUIDSAtmDecoh::Set_Debug)
   ;
 

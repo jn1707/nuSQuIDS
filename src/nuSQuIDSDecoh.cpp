@@ -2,9 +2,8 @@
 Implementing a neutrino decoherence model in SQuIDS/nuSQuIDS
 Tom Stuttard, Mikkel Jensen (Niels Bohr Institute)
 */
-
+#include <math.h>
 #include <nuSQuIDS/nuSQuIDSDecoh.h>
-
 
 //TODO Put this somewhere, proper const correctness, etc
 void print_gsl_matrix(gsl_matrix_complex* matrix) {
@@ -43,7 +42,7 @@ void nuSQUIDSDecoh::init() {
     }
   }
   Set_DecoherenceGammaMatrix(tmp_dmat);
-
+  
   // Init interaction basis gamma matrices
 #if 0
   decoherence_gamma_matrix_evol.resize(ne);
@@ -73,7 +72,7 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//
 
       // Write this element to the matrix
       gsl_complex c {{ dmat[i][j] , 0.0 }}; //Only using real part right now
-      std::cout << "Setting [" << i << "," << j << "] = " << GSL_REAL(c) << std::endl;
+      //std::cout << "Setting [" << i << "," << j << "] = " << GSL_REAL(c) << std::endl;
       gsl_matrix_complex_set(M,i,j,c); // TODO there is a gsl_complex_conjugate method, could be useful...
 
     }
@@ -134,6 +133,16 @@ marray<double,2> nuSQUIDSDecoh::Get_DecoherenceGammaMatrix() const {
     }
   }
   return dmat;
+}
+
+
+
+void nuSQUIDSDecoh::Set_EnergyDependence(double n)  {
+  n_energy = n; 
+}
+
+double nuSQUIDSDecoh::Get_EnergyDependence() const {
+  return n_energy; 
 }
 
 
@@ -217,8 +226,14 @@ squids::SU_vector nuSQUIDSDecoh::D_Rho(unsigned int ei,unsigned int index_rho, d
 
   auto rho = estate[ei].rho[index_rho].GetComponents();
 
+  double n_energy = Get_EnergyDependence();
+  //std::cout << " " << n_energy;
+  //std::cout << "--------------------";
+  //std::cout << "energy value:" << E_range[ei];
+  //std::cout << pow( E_range[ei] * pow(10,-9), n) << " ";
+
   for( unsigned int i = 0 ; i < (nsun*nsun) ; ++i ) {
-      D_rho_buffer_tmp[i] = rho[i] * gamma[i];
+      D_rho_buffer_tmp[i] = rho[i] * gamma[i] * pow( E_range[ei] * pow(10,-9), n_energy) ;
   }
   squids::SU_vector D_rho_val(D_rho_buffer_tmp);
   return D_rho_val;
