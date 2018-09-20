@@ -42,7 +42,6 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     { init(); }
 
     // TODO Copy and move constructors...
-
   
     // Set the Gamma decoherence matrix elements individually
     void Set_DecoherenceGammaMatrix(const marray<double,2>& dmat);
@@ -55,7 +54,6 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     // Get the current value of the decoherence matrix
     marray<double,2> Get_DecoherenceGammaMatrix() const;
 
-
     // Set the energy dependence using the form:  Gamma = Gamma_0 * (E/E_0) ^ n_energy
     // See https://arxiv.org/abs/1803.04438.pdf equation 2.13
     void Set_EnergyDependence(double n_energy);
@@ -63,15 +61,9 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     // Get the current value of the energy depedence 
     double Get_EnergyDependence() const;
 
-
-    //TODO REMOVE
-    //TODO REMOVE
-    //TODO REMOVE
+    //TODO REMOVE, these are for debugging
     void PrintTransformationMatrix() const;
     void PrintState() const;
-    //TODO REMOVE
-    //TODO REMOVE
-    //TODO REMOVE
 
 
   protected:
@@ -92,12 +84,6 @@ class nuSQUIDSDecoh: public nuSQUIDS {
 
     // Buffer for holding energy power (n_energy)
     double n_energy;
-
-    //TODO
-#if 0
-    void AddToPreDerive(double x) override;
-    std::vector<squids::SU_vector> decoherence_gamma_matrix_evol;
-#endif
 
 };
 

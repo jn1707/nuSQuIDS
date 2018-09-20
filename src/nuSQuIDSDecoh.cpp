@@ -80,6 +80,8 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//
     }
   }
 
+  // Store the temporary matrix in the member variable
+  // This takes over the memory for M, so no need to free(M)
   decoherence_gamma_gsl_matrix.reset(M);
 
   // Update the SU(N) vector from the matrix   
@@ -88,9 +90,6 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//
   // TODO rotate to basis
   //decoherence_gamma_matrix.RotateToB1(params);
   
-  // Done with the matrix now
-  //gsl_matrix_complex_free(M); //TODO
-
 }
 
 
@@ -187,57 +186,27 @@ squids::SU_vector nuSQUIDSDecoh::D_Rho(unsigned int ei,unsigned int index_rho, d
   // Determine D[rho] from the gamma matrix and rho
   //
 
-#define SOLVE_IN_MASS_BASIS 0
-#define SOLVE_IN_INT_BASIS 0
-
   // Get the components of rho
-  auto rho_int_basis = estate[ei].rho[index_rho];
-#if SOLVE_IN_MASS_BASIS
-  // Convert rho from int to mass basis
-  squids::SU_vector rho_mass_basis = estate[ei].rho[index_rho].Evolve(H0_array[ei],int_to_mass_basis_time_shift);
-  auto rho = rho_mass_basis.GetComponents();
-#else
-  auto rho = rho_int_basis.GetComponents();
-#endif
+  auto rho = estate[ei].rho[index_rho].GetComponents();
 
-  // Get the components of gamma
-#if SOLVE_IN_INT_BASIS
-  // Convert gamma from mass to int basis
-  squids::SU_vector gamma_int_basis = decoherence_gamma_matrix.Evolve(H0_array[ei],mass_to_int_basis_time_shift);
-  auto gamma = gamma_int_basis.GetComponents();
-#else
+  // Get the components of gamma, e.g. each real scalar
+  // Note that these are just scalars, not need for int<->mass basis rotation
   auto gamma = decoherence_gamma_matrix.GetComponents();
-#endif
 
-  // Element-wise SU vector multiplication to get D[rho] //TODO replace with Chris' new function
+  // Perform element-wise SU vector multiplication to get D[rho] operator (as a NxN GSL matrix)
+  // Include the energy dependence
+  //TODO replace with Chris' new function
   std::vector<double> D_rho_vect(nsun*nsun); //Cannot use a member variable as the buffer since the function is constant
   for( unsigned int i = 0 ; i < (nsun*nsun) ; ++i ) {
       D_rho_vect[i] = rho[i] * gamma[i] * pow( E_range[ei] * energy_conversion, n_energy);
   }
 
-  // Convert to SU vector
-#if SOLVE_IN_MASS_BASIS
-  // Convert back to interaction basis
-  squids::SU_vector D_rho_mass_basis(D_rho_vect);
-  squids::SU_vector D_rho_val = D_rho_mass_basis.Evolve(H0_array[ei],mass_to_int_basis_time_shift);
-#else
+  // Convert the D[rho] GSL matrix to an SU vector
   squids::SU_vector D_rho_val(D_rho_vect);
-#endif
 
   return D_rho_val;
 
 }
-
-
-#if 0
-void nuSQUIDSDecoh::AddToPreDerive(double x){
-  for(int ei = 0; ei < ne; ei++){
-    // Get the gamma matrix in the interaction basis
-    decoherence_gamma_matrix_evol[ei] = decoherence_gamma_matrix.Evolve(H0_array[ei],(x-Get_t_initial())); // mass basis -> interaction basis
-  }
-}
-#endif
-
 
 
 void nuSQUIDSDecoh::PrintTransformationMatrix() const {
