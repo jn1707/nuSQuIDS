@@ -6,15 +6,19 @@ Tom Stuttard, Mikkel Jensen (Niels Bohr Institute)
 #include <nuSQuIDS/nuSQuIDSDecoh.h>
 
 //TODO Put this somewhere, proper const correctness, etc
+#if 1
+#include <iostream>
+#include <iomanip>
 void print_gsl_matrix(gsl_matrix_complex* matrix) {
   for (size_t i = 0; i < matrix->size1; i++) {
     for (size_t j = 0; j < matrix->size2; j++) {
-      std::cout << GSL_REAL(gsl_matrix_complex_get(matrix, i, j)) << " + " << GSL_IMAG(gsl_matrix_complex_get(matrix, i, j)) << "i   "; 
+      //std::cout << std::fixed << std::setprecision(2) << GSL_REAL(gsl_matrix_complex_get(matrix, i, j)) << " + " << GSL_IMAG(gsl_matrix_complex_get(matrix, i, j)) << "i   "; 
+      std::cout << std::scientific << GSL_REAL(gsl_matrix_complex_get(matrix, i, j)) << " + " << GSL_IMAG(gsl_matrix_complex_get(matrix, i, j)) << "i   "; 
     }
     std::cout << std::endl;
   }
 }
-
+#endif
 
 namespace nusquids{
 
@@ -22,14 +26,13 @@ namespace nusquids{
 // Common initialisation tasks
 void nuSQUIDSDecoh::init() {
 
-  // TODO REMOVE???
   // For now want to calculate in the mass basis as is simpler
   // WARNING: There is no splined interpolation between energy nodes (maybe also coszen?) in the mass basis
-  //Set_Basis(mass);
+  //Set_Basis(mass); //TODO Seems to be a problem here, results don't match
 
   // Currently 3 flavors (could extend this if needed, but not supported yet)
-  if ( numneu != 3 )
-    throw std::runtime_error("nuSQUIDSDecoh::Error::Only currently supporting 3 neutrino flavors");
+  if ( ! ( (numneu == 2) ||  (numneu == 3) ) )
+    throw std::runtime_error("nuSQUIDSDecoh::Error::Only currently supporting 2 or 3 neutrino flavors");
 
   // Enable decoherence term in the nuSQuIDS numerical solver
   Set_DecoherenceTerms(true);
@@ -72,7 +75,6 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//
 
       // Write this element to the matrix
       gsl_complex c {{ dmat[i][j] , 0.0 }}; //Only using real part right now
-      //std::cout << "Setting [" << i << "," << j << "] = " << GSL_REAL(c) << std::endl;
       gsl_matrix_complex_set(M,i,j,c); // TODO there is a gsl_complex_conjugate method, could be useful...
 
     }
@@ -89,23 +91,28 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//
   // Done with the matrix now
   //gsl_matrix_complex_free(M); //TODO
 
-#if 0
-  // Update decoherence matrix // TODO Is ther a more efficient way to set the elements of a SU_vector?
-  for( unsigned int i = 0 ; i < numneu ; ++i ) {
-    for( unsigned int j = 0 ; j < numneu ; ++j ) {
-      unsigned int k = (i*numneu) + j;
-      decoherence_gamma_matrix[k] = dmat[i][j];
-    }
-  }
-#endif
-
-  //if(print) std::cout << "+++ decoherence_gamma_matrix = " << std::endl; //TODO REMOVE
+}
 
 
+void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(double Gamma) {
+
+  if ( numneu != 2 )
+    throw std::runtime_error("nuSQUIDSDecoh::Error::Function only valid for 2 neutrino flavors");
+
+  marray<double,2> dmat{2,2};
+  dmat[0][0] = 0.;
+  dmat[0][1] = Gamma;
+  dmat[1][0] = Gamma;
+  dmat[1][1] = 0.;
+  Set_DecoherenceGammaMatrix(dmat);
 }
 
 
 void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(double Gamma21,double Gamma31,double Gamma32) {//, Basis basis = flavor) {  //TODO specify basis
+
+  if ( numneu != 3 )
+    throw std::runtime_error("nuSQUIDSDecoh::Error::Function only valid for 3 neutrino flavors");
+
   //TODO Is there a more efficient way to do this (is part of the PISA minimizer so is called multiple times)?
   marray<double,2> dmat{3,3};
   dmat[0][0] = 0.;
@@ -117,7 +124,9 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(double Gamma21,double Gamma31,dou
   dmat[2][0] = Gamma31;
   dmat[2][1] = Gamma32;
   dmat[2][2] = 0.;
+
   Set_DecoherenceGammaMatrix(dmat);
+
 }
 
 
@@ -152,148 +161,71 @@ squids::SU_vector nuSQUIDSDecoh::D_Rho(unsigned int ei,unsigned int index_rho, d
   // It gets used like: drho/dt = -i[H,rho] - D[rho]
   // D[rho] is a NxN matrix (N is num neutrino flavors) where each element is: D[rho]_ij = rho_i,j * Gamma_i,j
 
+  //
+  // Prepare for calculation
+  //
+
   // Not currently supporting calculating in the flavor basis TODO Move this check somewhere that is not called constantly...
   if(basis == flavor)
-    throw std::runtime_error("nuSQUIDSDecoh::Error::Flavor basis is not supported fo the calculation");
+    throw std::runtime_error("nuSQUIDSDecoh::Error::Flavor basis is not supported for the calculation");
 
+  if(basis == mass)
+    throw std::runtime_error("nuSQUIDSDecoh::Error::Mass basis is not supported for the calculation");
 
   // Define shifts between mass and interaction basis
   double int_to_mass_basis_time_shift = Get_t_initial() - t; // Backwards in time from t to t0
   double mass_to_int_basis_time_shift = t - Get_t_initial(); // Forwards in time from t0 to t
-//  double int_to_mass_basis_time_shift = t - Get_t_initial();
-//  double mass_to_int_basis_time_shift = Get_t_initial() - t;
 
-//TODO need to decide how to do this: This version rotates rho to the mass basis for the calculation, the D[rho] back to the interaction basis
-#if 0
-  std::vector<double> D_rho_buffer_mass_basis(nsun*nsun); //TODO Member
+  // Get the energy dependence
+  double n_energy = Get_EnergyDependence();
 
-  // Get the Gamma matrix elements (mass basis)
-  auto gamma_mass_basis = decoherence_gamma_matrix.GetComponents(); //TODO Is this a waste of a memory allocation?
+  // Get energy conversion
+  double energy_conversion = pow(10,-9);
 
-  // Interaction basis case
-  // TODO Make smarter toggles with less code reproduction here...
-  if(basis == interaction) {
 
-    // Get rho and rotate from interaction to mass basis
-    //squids::SU_vector rho_evol = estate[ei].rho[index_rho].Evolve(H0_array[ei],int_to_mass_basis_time_shift);
-    //auto rho_mass_basis = rho_evol.GetComponents();
-    auto rho_mass_basis = estate[ei].rho[index_rho];
-/*
-    if(false) {
-      std::cout << std::endl << "t = " << t << std::endl;
-      std::cout << "rho:" << std::endl;
-      print_gsl_matrix(rho_evol.GetGSLMatrix().get());
-    }
-*/
-    // Multiply the Gamma and rho matrices element-wise to get D[rho]
-    //TODO Does this SU vector element-wise multiplication do the same thing multiplying the elements in the standard 3x3 GSL matrix?
-    for( unsigned int i = 0 ; i < (nsun*nsun) ; ++i ) {
-        D_rho_buffer_mass_basis[i] = rho_mass_basis[i] * gamma_mass_basis[i];
-    }
-    squids::SU_vector D_rho_mass_basis(D_rho_buffer_mass_basis);
-    return D_rho_mass_basis;
+  //
+  // Determine D[rho] from the gamma matrix and rho
+  //
 
-    // Rotate D[rho] to from the mass basis to the interaction basis //TODO Is this definitely mathemetically valid?
-    squids::SU_vector D_rho_int_basis = D_rho_mass_basis.Evolve(H0_array[ei],mass_to_int_basis_time_shift);
+#define SOLVE_IN_MASS_BASIS 0
+#define SOLVE_IN_INT_BASIS 0
 
-    return D_rho_int_basis;
-
-  }
-  else if(basis == mass) {
-
-    std::cout << "Mass basis" << std::endl;
-
-    auto rho_mass_basis = estate[ei].rho[index_rho].GetComponents();
-
-    for( unsigned int i = 0 ; i < (nsun*nsun) ; ++i ) {
-        D_rho_buffer_mass_basis[i] = rho_mass_basis[i] * gamma_mass_basis[i];
-    }
-    squids::SU_vector D_rho_mass_basis(D_rho_buffer_mass_basis);
-    return D_rho_mass_basis;
-
-  }
+  // Get the components of rho
+  auto rho_int_basis = estate[ei].rho[index_rho];
+#if SOLVE_IN_MASS_BASIS
+  // Convert rho from int to mass basis
+  squids::SU_vector rho_mass_basis = estate[ei].rho[index_rho].Evolve(H0_array[ei],int_to_mass_basis_time_shift);
+  auto rho = rho_mass_basis.GetComponents();
+#else
+  auto rho = rho_int_basis.GetComponents();
 #endif
 
-
-
-//TODO I don't think this should work as I'm not handling the bases at all here, but somehow it seems to exactly match my solver. What is going on!?!
-//TODO Perhaps my gamma matrix is automatically converted to the correct basis when I create the SU_vector? 
-#if 1
-
-  // Element-wise SU vector multiplication //TODO replace with Chris' new function
-  std::vector<double> D_rho_vect(nsun*nsun); //Cannot use a member since the function is constant
+  // Get the components of gamma
+#if SOLVE_IN_INT_BASIS
+  // Convert gamma from mass to int basis
+  squids::SU_vector gamma_int_basis = decoherence_gamma_matrix.Evolve(H0_array[ei],mass_to_int_basis_time_shift);
+  auto gamma = gamma_int_basis.GetComponents();
+#else
   auto gamma = decoherence_gamma_matrix.GetComponents();
-  auto rho = estate[ei].rho[index_rho].GetComponents();
+#endif
 
-  double n_energy = Get_EnergyDependence();
-  //std::cout << " " << n_energy;
-  //std::cout << "--------------------";
-  //std::cout << "energy value:" << E_range[ei];
-  //std::cout << pow( E_range[ei] * pow(10,-9), n) << " ";
-
+  // Element-wise SU vector multiplication to get D[rho] //TODO replace with Chris' new function
+  std::vector<double> D_rho_vect(nsun*nsun); //Cannot use a member variable as the buffer since the function is constant
   for( unsigned int i = 0 ; i < (nsun*nsun) ; ++i ) {
-      D_rho_vect[i] = rho[i] * gamma[i] * pow( E_range[ei] * pow(10,-9), n_energy) ;
+      D_rho_vect[i] = rho[i] * gamma[i] * pow( E_range[ei] * energy_conversion, n_energy);
   }
 
+  // Convert to SU vector
+#if SOLVE_IN_MASS_BASIS
+  // Convert back to interaction basis
+  squids::SU_vector D_rho_mass_basis(D_rho_vect);
+  squids::SU_vector D_rho_val = D_rho_mass_basis.Evolve(H0_array[ei],mass_to_int_basis_time_shift);
+#else
   squids::SU_vector D_rho_val(D_rho_vect);
+#endif
 
   return D_rho_val;
 
-#endif
-
-
-
-
-//TODO need to decide how to do this: This version rotates gamma to the interaction basis for the calculation
-#if 0
-  std::vector<double> D_rho_buffer_int_basis(nsun*nsun); //TODO Member
-
-  // Get rho in the interactio  basis (it already is)
-  auto rho_int_basis = estate[ei].rho[index_rho];
-
-  // Rotate Gamma matrix to interaction basis
-  //TODO Do this in `PreDerive` instead for efficiency
-  squids::SU_vector gamma_evol = decoherence_gamma_matrix.Evolve(H0_array[ei],mass_to_int_basis_time_shift);
-  auto gamma_int_basis = gamma_evol.GetComponents();
-
-  // Multiply the Gamma and rho matrices element-wise to get D[rho]
-  //TODO Does this SU vector element-wise multiplication do the same thing multiplying the elements in the standard 3x3 GSL matrix?
-  for( unsigned int i = 0 ; i < (nsun*nsun) ; ++i ) {
-      D_rho_buffer_int_basis[i] = rho_int_basis[i] * gamma_int_basis[i];
-  }
-  squids::SU_vector D_rho_int_basis(D_rho_buffer_int_basis);
-#endif
-
-
-
-// This is how to do the rho * Gamma elementwise calculation using GSL amtrix instead of SU_vector //TODO Remove this once sure don't need it
-#if 0
-  //TODO state or estate?
-  // Convert rho to mass basis (from interaction basis) //TODO PreDerive, e.g. only once
-  //squids::SU_vector state_reversal = estate[ei].rho[index_rho].Evolve(H0_array[ei],first_shift);
-  squids::SU_vector& state_reversal = estate[ei].rho[index_rho]; //TODO REMOVE
-
-  auto rho_matrix_mass_basis = state_reversal.GetGSLMatrix();
-  if(print) std::cout << "rho :" << std::endl;
-  if(print) print_gsl_matrix(rho_matrix_mass_basis.get());
-
-  auto D_rho_matrix_mass_basis = state_reversal.GetGSLMatrix();
-
-  //TODO Use a GSL buffer D_Rho
-  for( unsigned int i = 0 ; i < numneu ; ++i ) { //TODO Do this in a more efficient way
-    for( unsigned int j = 0 ; j < numneu ; ++j ) {
-      gsl_complex D_rho_ij{{ GSL_REAL(gsl_matrix_complex_get(decoherence_gamma_gsl_matrix.get(),i,j)) * GSL_REAL(gsl_matrix_complex_get(rho_matrix_mass_basis.get(),i,j)), 0. }};
-      gsl_matrix_complex_set(D_rho_matrix_mass_basis.get(),i,j,D_rho_ij);
-    }
-  }
-  if(print) std::cout << "D[rho] :" << std::endl;
-  if(print) print_gsl_matrix(D_rho_matrix_mass_basis.get());
-
-  squids::SU_vector D_rho(D_rho_matrix_mass_basis.get());
-#endif
-
-
-  //return D_rho_int_basis;
 }
 
 
@@ -321,12 +253,8 @@ void nuSQUIDSDecoh::PrintTransformationMatrix() const {
 
 void nuSQUIDSDecoh::PrintState() const {
   auto rho_gsl = estate[0].rho[0].GetGSLMatrix();
-  print_gsl_matrix(rho_gsl.get());
+//  print_gsl_matrix(rho_gsl.get());
 }
 
 
-
-
 } // close namespace
-
-

@@ -70,8 +70,8 @@ void nuSQUIDS::init(double xini){
 
   if ( numneu > SQUIDS_MAX_HILBERT_DIM )
     throw std::runtime_error("nuSQUIDS::Error::Maximum number of neutrinos exceded");
-  if ( numneu < 3)
-    throw std::runtime_error("nuSQUIDS::Error::Minimum number of neutrinos is three");
+  if ( numneu < 2)
+    throw std::runtime_error("nuSQUIDS::Error::Minimum number of neutrinos is two");
 
   nsun = numneu;
 
@@ -148,8 +148,8 @@ void nuSQUIDS::init(marray<double,1> E_vector, double xini){
 
   if ( numneu > SQUIDS_MAX_HILBERT_DIM )
     throw std::runtime_error("nuSQUIDS::Error::Maximum number of neutrinos exceded");
-  if ( numneu < 3)
-    throw std::runtime_error("nuSQUIDS::Error::Minimum number of neutrinos is three");
+  if ( numneu < 2)
+    throw std::runtime_error("nuSQUIDS::Error::Minimum number of neutrinos is two");
 
   nsun = numneu;
 
@@ -299,6 +299,7 @@ squids::SU_vector nuSQUIDS::H0(double Enu, unsigned int irho) const{
 }
 
 squids::SU_vector nuSQUIDS::HI(unsigned int ie, unsigned int irho) const{
+
     double CC = HI_constants*current_density*current_ye;
     double NC;
 
@@ -317,9 +318,10 @@ squids::SU_vector nuSQUIDS::HI(unsigned int ie, unsigned int irho) const{
     potential += squids::detail::guarantee
       <squids::detail::NoAlias | squids::detail::EqualSizes | squids::detail::AlignedStorage>
       (NC*evol_b1_proj[irho][1][ie]);
-    potential += squids::detail::guarantee
-      <squids::detail::NoAlias | squids::detail::EqualSizes | squids::detail::AlignedStorage>
-      (NC*evol_b1_proj[irho][2][ie]);
+    if(numneu >= 3) 
+      potential += squids::detail::guarantee
+        <squids::detail::NoAlias | squids::detail::EqualSizes | squids::detail::AlignedStorage>
+        (NC*evol_b1_proj[irho][2][ie]);
 
     if (basis == mass)
       potential += H0_array[ie];
@@ -1022,7 +1024,8 @@ void nuSQUIDS::EvolveState(){
     Set_h((-1.0)*Get_h());
   }
 
-  /* //TODO Need to fix this for decoherence case. This if statement doesn't handle decoherence + vacuum case
+
+#if 0 //TODO Need to fix this for decoherence case. This if statement doesn't handle decoherence + vacuum case
   if ( body->IsConstantDensity() and not iinteraction ){
     // when only oscillations are considered and the density is constant
     // we can ju st rotate the system to the propagation eigenstates
@@ -1042,20 +1045,17 @@ void nuSQUIDS::EvolveState(){
     for(unsigned int rho = 0; rho < nrhos; rho++){
       for(unsigned int ie = 0; ie < ne; ie++){
         tmp1 = HI(ie,rho);
-        //std::cout << "antes " << E_range[ie] << " " << state[ie].rho[rho] << std::endl;
-        //std::cout << "hamiltonian " << tmp1 << std::endl;
         //here we deliberately update state directly,
         //rather than working on estate as we would is using GSL ODE evolution
         tmp2 = state[ie].rho[rho].UTransform(tmp1,gsl_complex_rect(0.,evolution_time));
         state[ie].rho[rho] = tmp2;
-        //std::cout << "despues " << E_range[ie] << " " << tmp2 << std::endl;
       }
     }
     if(progressbar)
       ProgressBar();
     return;
   }
-  */
+#endif
 
   if(positivization){
     int positivization_steps = static_cast<int>((track->GetFinalX() - track->GetInitialX())/positivization_scale);
@@ -1145,16 +1145,19 @@ void nuSQUIDS::Set_initial_state(const marray<double,2>& v, Basis basis){
   SetIniFlavorProyectors();
   iniH0();
 
+
   for(unsigned int i = 0; i < ne; i++){
     for(unsigned int r = 0; r < nrhos; r++){
       state[i].rho[r].SetAllComponents(0);
       if (basis == flavor){
-        for(unsigned int j = 0; j < numneu; j++)
+        for(unsigned int j = 0; j < numneu; j++) {
           state[i].rho[r] += v[i][j]*b1_proj[r][j];
+        }
       }
       else if (basis == mass){
-        for(unsigned int j = 0; j < numneu; j++)
+        for(unsigned int j = 0; j < numneu; j++) {
           state[i].rho[r] += v[i][j]*b0_proj[j];
+        }
       }
     }
   }

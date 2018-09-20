@@ -497,7 +497,8 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("GetNumRho",&nuSQUIDSDecoh::GetNumRho)
     .def("Set_Debug",&nuSQUIDSDecoh::Set_Debug)
     .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(const marray<double,2>&))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix)
-    .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(double,double,double))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix)
+    .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(double))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix) // 2 flavor
+    .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(double,double,double))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix) // 3 flavor
     .def("Get_DecoherenceGammaMatrix",&nuSQUIDSDecoh::Get_DecoherenceGammaMatrix)
     .def("Set_EnergyDependence",&nuSQUIDSDecoh::Set_EnergyDependence)
     .def("Get_EnergyDependence",&nuSQUIDSDecoh::Get_EnergyDependence)

@@ -49,7 +49,8 @@ class nuSQUIDSDecoh: public nuSQUIDS {
 
     // Set the Gamma decoherence matrix elements using the Gamma21,31,32 model
     // See https://arxiv.org/pdf/1708.05495.pdf equation 12
-    void Set_DecoherenceGammaMatrix(double Gamma21,double Gamma31,double Gamma32);
+    void Set_DecoherenceGammaMatrix(double Gamma); // 2 flavor
+    void Set_DecoherenceGammaMatrix(double Gamma21,double Gamma31,double Gamma32); // 3 flavor
 
     // Get the current value of the decoherence matrix
     marray<double,2> Get_DecoherenceGammaMatrix() const;
