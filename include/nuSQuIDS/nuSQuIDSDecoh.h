@@ -15,7 +15,7 @@ namespace nusquids{
 
 
 /*
-  nuSQuIDS extedned to include decohernece
+  nuSQuIDS extended to include decoherence
 */
 
 class nuSQUIDSDecoh: public nuSQUIDS {
@@ -31,6 +31,7 @@ class nuSQUIDSDecoh: public nuSQUIDS {
       : nuSQUIDS(numneu,NT)
       , decoherence_gamma_matrix(numneu)
       , n_energy(0.)
+      , units()
     { init(); }
 
     // Constructor : Multi-energy mode
@@ -39,10 +40,14 @@ class nuSQUIDSDecoh: public nuSQUIDS {
       : nuSQUIDS(E_vector,numneu,NT,iinteraction,ncs)
       , decoherence_gamma_matrix(numneu)
       , n_energy(0.)
+      , units()
     { init(); }
 
     // TODO Copy and move constructors...
   
+    // Enable/disable the decoherence D[rho] operator
+    void EnableDecoherence(bool enable);
+
     // Set the Gamma decoherence matrix elements individually
     void Set_DecoherenceGammaMatrix(const marray<double,2>& dmat);
 
@@ -56,10 +61,10 @@ class nuSQUIDSDecoh: public nuSQUIDS {
 
     // Set the energy dependence using the form:  Gamma = Gamma_0 * (E/E_0) ^ n_energy
     // See https://arxiv.org/abs/1803.04438.pdf equation 2.13
-    void Set_EnergyDependence(double n_energy);
+    void Set_DecoherenceGammaEnergyDependence(double n_energy);
 
     // Get the current value of the energy depedence 
-    double Get_EnergyDependence() const;
+    double Get_DecoherenceGammaEnergyDependence() const;
 
     //TODO REMOVE, these are for debugging
     void PrintTransformationMatrix() const;
@@ -85,6 +90,9 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     // Buffer for holding energy power (n_energy)
     double n_energy;
 
+    // Units container
+    squids::Const units;
+
 };
 
 
@@ -106,6 +114,10 @@ class nuSQUIDSAtmDecoh : public nuSQUIDSAtm<nuSQUIDSDecoh> {
       for(nuSQUIDSDecoh& nsq : nusq_array) nsq.Set_Debug(debug);
     } 
 
+    void EnableDecoherence(bool enable) {
+      for(nuSQUIDSDecoh& nsq : nusq_array) nsq.EnableDecoherence(enable);
+    }
+
     // Wrap decoherence Gamma matrix getters/setters
     void Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {
       for(nuSQUIDSDecoh& nsq : nusq_array) nsq.Set_DecoherenceGammaMatrix(dmat);
@@ -120,12 +132,12 @@ class nuSQUIDSAtmDecoh : public nuSQUIDSAtm<nuSQUIDSDecoh> {
     }
 
     // Wrap decoherence energy dependence getters/setters
-    void Set_EnergyDependence(double n_energy) {
-      for(nuSQUIDSDecoh& nsq : nusq_array) nsq.Set_EnergyDependence(n_energy);
+    void Set_DecoherenceGammaEnergyDependence(double n_energy) {
+      for(nuSQUIDSDecoh& nsq : nusq_array) nsq.Set_DecoherenceGammaEnergyDependence(n_energy);
     }
 
-    double Get_EnergyDependence() const {
-      return nusq_array[0].Get_EnergyDependence();
+    double Get_DecoherenceGammaEnergyDependence() const {
+      return nusq_array[0].Get_DecoherenceGammaEnergyDependence();
     }
 
 

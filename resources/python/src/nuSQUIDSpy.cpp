@@ -437,13 +437,6 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("GetCosthRange",&nuSQUIDSAtm<>::GetCosthRange)
   ;
 
-  /*
-  class_<Decoherence, boost::noncopyable, std::shared_ptr<Decoherence> >("Decoherence",init<unsigned int, unsigned int, double, double>())
-    .def("Get_flux",&Decoherence::Get_flux)
-    .def("Evolve",&Decoherence::Evolve)
-  ;
-  */
-
   // TODO Need to remove function overloads for NT != 3 from here
   class_<nuSQUIDSDecoh, boost::noncopyable, std::shared_ptr<nuSQUIDSDecoh> >("nuSQUIDSDecoh",no_init)
     .def(init<unsigned int,NeutrinoType>(args("numneu","NT")))
@@ -496,12 +489,13 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("GetNumE",&nuSQUIDSDecoh::GetNumE)
     .def("GetNumRho",&nuSQUIDSDecoh::GetNumRho)
     .def("Set_Debug",&nuSQUIDSDecoh::Set_Debug)
+    .def("EnableDecoherence",&nuSQUIDSDecoh::EnableDecoherence)
     .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(const marray<double,2>&))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix)
     .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(double))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix) // 2 flavor
     .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(double,double,double))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix) // 3 flavor
     .def("Get_DecoherenceGammaMatrix",&nuSQUIDSDecoh::Get_DecoherenceGammaMatrix)
-    .def("Set_EnergyDependence",&nuSQUIDSDecoh::Set_EnergyDependence)
-    .def("Get_EnergyDependence",&nuSQUIDSDecoh::Get_EnergyDependence)
+    .def("Set_DecoherenceGammaEnergyDependence",&nuSQUIDSDecoh::Set_DecoherenceGammaEnergyDependence)
+    .def("Get_DecoherenceGammaEnergyDependence",&nuSQUIDSDecoh::Get_DecoherenceGammaEnergyDependence)
     .def("PrintTransformationMatrix",&nuSQUIDSDecoh::PrintTransformationMatrix)
     .def("PrintState",&nuSQUIDSDecoh::PrintState)
     ;
@@ -543,12 +537,13 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("Set_initial_state",(void(nuSQUIDSAtmDecoh::*)(const marray<double,3>&, Basis))&nuSQUIDSAtmDecoh::Set_initial_state,nuSQUIDSAtmDecoh_Set_initial_state())
     .def("Set_initial_state",(void(nuSQUIDSAtmDecoh::*)(const marray<double,4>&, Basis))&nuSQUIDSAtmDecoh::Set_initial_state,nuSQUIDSAtmDecoh_Set_initial_state())
     .def("GetERange",&nuSQUIDSAtmDecoh::GetERange)
+    .def("EnableDecoherence",&nuSQUIDSAtmDecoh::EnableDecoherence)
     .def("GetCosthRange",&nuSQUIDSAtmDecoh::GetCosthRange)
     .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSAtmDecoh::*)(const marray<double,2>&))&nuSQUIDSAtmDecoh::Set_DecoherenceGammaMatrix)
     .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSAtmDecoh::*)(double,double,double))&nuSQUIDSAtmDecoh::Set_DecoherenceGammaMatrix)
     .def("Get_DecoherenceGammaMatrix",&nuSQUIDSAtmDecoh::Get_DecoherenceGammaMatrix)
-    .def("Set_EnergyDependence",&nuSQUIDSAtmDecoh::Set_EnergyDependence)
-    .def("Get_EnergyDependence",&nuSQUIDSAtmDecoh::Get_EnergyDependence)
+    .def("Set_DecoherenceGammaEnergyDependence",&nuSQUIDSAtmDecoh::Set_DecoherenceGammaEnergyDependence)
+    .def("Get_DecoherenceGammaEnergyDependence",&nuSQUIDSAtmDecoh::Get_DecoherenceGammaEnergyDependence)
     .def("Set_Debug",&nuSQUIDSAtmDecoh::Set_Debug)
   ;
 

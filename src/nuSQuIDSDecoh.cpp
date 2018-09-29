@@ -23,6 +23,11 @@ void print_gsl_matrix(gsl_matrix_complex* matrix) {
 namespace nusquids{
 
 
+void nuSQUIDSDecoh::EnableDecoherence(bool enable) {
+  Set_DecoherenceTerms(enable);
+}
+
+
 // Common initialisation tasks
 void nuSQUIDSDecoh::init() {
 
@@ -35,7 +40,7 @@ void nuSQUIDSDecoh::init() {
     throw std::runtime_error("nuSQUIDSDecoh::Error::Only currently supporting 2 or 3 neutrino flavors");
 
   // Enable decoherence term in the nuSQuIDS numerical solver
-  Set_DecoherenceTerms(true);
+  EnableDecoherence(true);
 
   // Initialise the decoherence matrix //TODO Is there a simpler way to do this? If stick with SU_vector can use the SetComponentsToZero function
   marray<double,2> tmp_dmat{numneu,numneu};
@@ -74,7 +79,7 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//
     for( unsigned int j = 0 ; j < numneu ; ++j ) {
 
       // Write this element to the matrix
-      gsl_complex c {{ dmat[i][j] , 0.0 }}; //Only using real part right now
+      gsl_complex c{{ dmat[i][j] , 0.0 }}; //Only using real part right now
       gsl_matrix_complex_set(M,i,j,c); // TODO there is a gsl_complex_conjugate method, could be useful...
 
     }
@@ -112,7 +117,7 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(double Gamma21,double Gamma31,dou
   if ( numneu != 3 )
     throw std::runtime_error("nuSQUIDSDecoh::Error::Function only valid for 3 neutrino flavors");
 
-  //TODO Is there a more efficient way to do this (is part of the PISA minimizer so is called multiple times)?
+  //TODO Is there a more efficient way to do this? This is called at each step in the fit so is called many multiple times)?
   marray<double,2> dmat{3,3};
   dmat[0][0] = 0.;
   dmat[0][1] = Gamma21;
@@ -129,15 +134,16 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(double Gamma21,double Gamma31,dou
 }
 
 
-// Get the current value of the decoherence matrix
+// Get the current value of the decoherence gamma matrix
+// Return the value as the marray type, which can be converted to a numpy array in pyhton
 // This is not used as part of the main solver, just for user scripts
+//TODO Currently this doesn't support imaginary components, but we don't support writing imaginary components right now either
 marray<double,2> nuSQUIDSDecoh::Get_DecoherenceGammaMatrix() const {
-  //auto decoherence_gamma_gsl_matrix = decoherence_gamma_matrix.GetGSLMatrix(); //TODO use this instead, including imaginary
+  auto decoherence_gamma_gsl_matrix = decoherence_gamma_matrix.GetGSLMatrix();
   marray<double,2> dmat{numneu,numneu};
-  for( unsigned int i = 0 ; i < numneu ; ++i ) { //TODO Do this in a more efficient way
+  for( unsigned int i = 0 ; i < numneu ; ++i ) {
     for( unsigned int j = 0 ; j < numneu ; ++j ) {
-      unsigned int k = (i*numneu) + j;
-      dmat[i][j] = decoherence_gamma_matrix[k];
+      dmat[i][j] = GSL_REAL(gsl_matrix_complex_get(decoherence_gamma_gsl_matrix.get(),i,j));
     }
   }
   return dmat;
@@ -145,11 +151,11 @@ marray<double,2> nuSQUIDSDecoh::Get_DecoherenceGammaMatrix() const {
 
 
 
-void nuSQUIDSDecoh::Set_EnergyDependence(double n)  {
+void nuSQUIDSDecoh::Set_DecoherenceGammaEnergyDependence(double n)  {
   n_energy = n; 
 }
 
-double nuSQUIDSDecoh::Get_EnergyDependence() const {
+double nuSQUIDSDecoh::Get_DecoherenceGammaEnergyDependence() const {
   return n_energy; 
 }
 
@@ -168,18 +174,17 @@ squids::SU_vector nuSQUIDSDecoh::D_Rho(unsigned int ei,unsigned int index_rho, d
   if(basis == flavor)
     throw std::runtime_error("nuSQUIDSDecoh::Error::Flavor basis is not supported for the calculation");
 
+  // At time of writing there are known issues with the mass basis calculation
   if(basis == mass)
     throw std::runtime_error("nuSQUIDSDecoh::Error::Mass basis is not supported for the calculation");
 
   // Define shifts between mass and interaction basis
-  double int_to_mass_basis_time_shift = Get_t_initial() - t; // Backwards in time from t to t0
-  double mass_to_int_basis_time_shift = t - Get_t_initial(); // Forwards in time from t0 to t
+  //double int_to_mass_basis_time_shift = Get_t_initial() - t; // Backwards in time from t to t0
+  //double mass_to_int_basis_time_shift = t - Get_t_initial(); // Forwards in time from t0 to t
 
-  // Get the energy dependence
-  double n_energy = Get_EnergyDependence();
-
-  // Get energy conversion
-  double energy_conversion = pow(10,-9);
+  // Get the energy dependence of the Gamma damping parameters for this energy
+  // Note that we define the Gamma value relative to its value at 1 GeV
+  double energy_dependence = pow( E_range[ei] * units.GeV, n_energy);
 
 
   //
@@ -190,7 +195,7 @@ squids::SU_vector nuSQUIDSDecoh::D_Rho(unsigned int ei,unsigned int index_rho, d
   auto rho = estate[ei].rho[index_rho].GetComponents();
 
   // Get the components of gamma, e.g. each real scalar
-  // Note that these are just scalars, not need for int<->mass basis rotation
+  // Note that these are just scalars, no need for int<->mass basis rotation
   auto gamma = decoherence_gamma_matrix.GetComponents();
 
   // Perform element-wise SU vector multiplication to get D[rho] operator (as a NxN GSL matrix)
@@ -198,7 +203,7 @@ squids::SU_vector nuSQUIDSDecoh::D_Rho(unsigned int ei,unsigned int index_rho, d
   //TODO replace with Chris' new function
   std::vector<double> D_rho_vect(nsun*nsun); //Cannot use a member variable as the buffer since the function is constant
   for( unsigned int i = 0 ; i < (nsun*nsun) ; ++i ) {
-      D_rho_vect[i] = rho[i] * gamma[i] * pow( E_range[ei] * energy_conversion, n_energy);
+      D_rho_vect[i] = rho[i] * gamma[i] * energy_dependence;
   }
 
   // Convert the D[rho] GSL matrix to an SU vector
