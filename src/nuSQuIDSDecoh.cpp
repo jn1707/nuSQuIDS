@@ -5,8 +5,7 @@ Tom Stuttard, Mikkel Jensen (Niels Bohr Institute)
 #include <math.h>
 #include <nuSQuIDS/nuSQuIDSDecoh.h>
 
-//TODO Put this somewhere, proper const correctness, etc
-#if 1
+//TODO Put this somewhere generic, with proper const correctness, etc
 #include <iostream>
 #include <iomanip>
 void print_gsl_matrix(gsl_matrix_complex* matrix) {
@@ -18,7 +17,6 @@ void print_gsl_matrix(gsl_matrix_complex* matrix) {
     std::cout << std::endl;
   }
 }
-#endif
 
 namespace nusquids{
 
@@ -182,32 +180,18 @@ squids::SU_vector nuSQUIDSDecoh::D_Rho(unsigned int ei,unsigned int index_rho, d
   //double int_to_mass_basis_time_shift = Get_t_initial() - t; // Backwards in time from t to t0
   //double mass_to_int_basis_time_shift = t - Get_t_initial(); // Forwards in time from t0 to t
 
-  // Get the energy dependence of the Gamma damping parameters for this energy
-  // Note that we define the Gamma value relative to its value at 1 GeV
-  double energy_dependence = pow( E_range[ei] * units.GeV, n_energy);
-
-
   //
   // Determine D[rho] from the gamma matrix and rho
   //
 
-  // Get the components of rho
-  auto rho = estate[ei].rho[index_rho].GetComponents();
 
-  // Get the components of gamma, e.g. each real scalar
-  // Note that these are just scalars, no need for int<->mass basis rotation
-  auto gamma = decoherence_gamma_matrix.GetComponents();
+  // Get the energy dependence of the Gamma damping parameters for this energy
+  // Note that we define the Gamma value relative to its value at 1 GeV
+  double energy_dependence = pow( E_range[ei] * units.GeV, n_energy);
 
   // Perform element-wise SU vector multiplication to get D[rho] operator (as a NxN GSL matrix)
   // Include the energy dependence
-  //TODO replace with Chris' new function
-  std::vector<double> D_rho_vect(nsun*nsun); //Cannot use a member variable as the buffer since the function is constant
-  for( unsigned int i = 0 ; i < (nsun*nsun) ; ++i ) {
-      D_rho_vect[i] = rho[i] * gamma[i] * energy_dependence;
-  }
-
-  // Convert the D[rho] GSL matrix to an SU vector
-  squids::SU_vector D_rho_val(D_rho_vect);
+  squids::SU_vector D_rho_val( squids::ElementwiseProduct( estate[ei].rho[index_rho], decoherence_gamma_matrix * energy_dependence ) );
 
   return D_rho_val;
 
@@ -227,7 +211,7 @@ void nuSQUIDSDecoh::PrintTransformationMatrix() const {
 
 void nuSQUIDSDecoh::PrintState() const {
   auto rho_gsl = estate[0].rho[0].GetGSLMatrix();
-//  print_gsl_matrix(rho_gsl.get());
+ print_gsl_matrix(rho_gsl.get());
 }
 
 

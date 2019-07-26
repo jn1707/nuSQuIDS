@@ -1,9 +1,8 @@
 /*
 Implementing a neutrino decoherence model in SQuIDS/nuSQuIDS
+
 Tom Stuttard, Mikkel Jensen (Niels Bohr Institute)
 */
-
-//TODO Create a .cpp file
 
 
 #ifndef NUSQUIDSDECOH_H
@@ -66,7 +65,6 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     // Get the current value of the energy depedence 
     double Get_DecoherenceGammaEnergyDependence() const;
 
-    //TODO REMOVE, these are for debugging
     void PrintTransformationMatrix() const;
     void PrintState() const;
 
@@ -87,7 +85,7 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     // Function to return D[rho] (result of decohernce operator on rho)
     squids::SU_vector D_Rho(unsigned int ei,unsigned int index_rho, double t) const override;
 
-    // Buffer for holding energy power (n_energy)
+    // Index of Gamma energy dependence
     double n_energy;
 
     // Units container
