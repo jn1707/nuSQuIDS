@@ -47,6 +47,10 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     // Enable/disable the decoherence D[rho] operator
     void EnableDecoherence(bool enable);
 
+    // Get.set basis in which decoherence Gamma matrix is defined
+    void Set_DecoherenceBasis(Basis basis);
+    Basis Get_DecoherenceBasis();
+
     // Set the Gamma decoherence matrix elements individually
     void Set_DecoherenceGammaMatrix(const marray<double,2>& dmat);
 
@@ -76,17 +80,20 @@ class nuSQUIDSDecoh: public nuSQUIDS {
 
   private:
 
+    // Basis in which the decoherence Gamma matrix is defined
+    Basis decoherence_basis;
+
     // The matrix containing the Gamma coefficients in D[rho]
     // This is the general case of nsun*nsun independent elements,
     // which also supports the Gamma21,Gamma31,Gamma32 model when the correct setter is used
     squids::SU_vector decoherence_gamma_matrix; //TODO Is this the correct type to store this as?
     std::unique_ptr<gsl_matrix_complex> decoherence_gamma_gsl_matrix;
 
-    // Function to return D[rho] (result of decohernce operator on rho)
-    squids::SU_vector D_Rho(unsigned int ei,unsigned int index_rho, double t) const override;
-
     // Index of Gamma energy dependence
     double n_energy;
+
+    // Function to return D[rho] (result of decohernce operator on rho)
+    squids::SU_vector D_Rho(unsigned int ei,unsigned int index_rho, double t) const override;
 
     // Units container
     squids::Const units;

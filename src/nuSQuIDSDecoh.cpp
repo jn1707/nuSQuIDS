@@ -29,38 +29,37 @@ void nuSQUIDSDecoh::EnableDecoherence(bool enable) {
 // Common initialisation tasks
 void nuSQUIDSDecoh::init() {
 
-  // For now want to calculate in the mass basis as is simpler
-  // WARNING: There is no splined interpolation between energy nodes (maybe also coszen?) in the mass basis
-  //Set_Basis(mass); //TODO Seems to be a problem here, results don't match
+  // Performing calculation in the interaction basi (which is the default)
+  // This is the only basis for which splined interpolation between nodes is implemented
+  // Could optionally try solving in e.g. the mass basis (Set_Basis(mass)), which would be simpler for debugging, but have discovered an issue with mass/falvor bassi calculation that needs resolving first
 
   // Currently 3 flavors (could extend this if needed, but not supported yet)
-  if ( ! ( (numneu == 2) ||  (numneu == 3) ) )
+  if ( ! ( (numneu == 2) || (numneu == 3) ) )
     throw std::runtime_error("nuSQUIDSDecoh::Error::Only currently supporting 2 or 3 neutrino flavors");
 
-  // Enable decoherence term in the nuSQuIDS numerical solver
+  // Enable decoherence term in the SQuIDS numerical solver
   EnableDecoherence(true);
 
-  // Initialise the decoherence matrix //TODO Is there a simpler way to do this? If stick with SU_vector can use the SetComponentsToZero function
-  marray<double,2> tmp_dmat{numneu,numneu};
-  for( unsigned int i = 0 ; i < numneu ; ++i ) {
-    for( unsigned int j = 0 ; j < numneu ; ++j ) {
-      tmp_dmat[i][j] = 0.;
-    }
-  }
-  Set_DecoherenceGammaMatrix(tmp_dmat);
-  
-  // Init interaction basis gamma matrices
-#if 0
-  decoherence_gamma_matrix_evol.resize(ne);
-  for(int ei = 0; ei < ne; ei++){
-    decoherence_gamma_matrix_evol[ei] = squids::SU_vector(nsun);
-  }
-#endif
+  // Initialise the decoherence matrix (default is no decoherence)
+  decoherence_gamma_matrix.SetAllComponents(0.);
 
+  // Default to mass basis for decoherence definition
+  Set_DecoherenceBasis(mass);
+  
 }
 
 
-void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//, Basis basis = flavor) {  //TODO specify basis
+void nuSQUIDSDecoh::Set_DecoherenceBasis(Basis basis) {
+  decoherence_basis = basis;
+}
+
+
+Basis nuSQUIDSDecoh::Get_DecoherenceBasis() {
+  return decoherence_basis;
+}
+
+
+void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {
 
   // Check dimensions (should be NxN, where N is number neutrino flavors)
   for( unsigned int dim = 0 ; dim < 2 ; ++dim ) {
@@ -90,8 +89,11 @@ void nuSQUIDSDecoh::Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {//
   // Update the SU(N) vector from the matrix   
   decoherence_gamma_matrix = squids::SU_vector(M);
 
-  // TODO rotate to basis
-  //decoherence_gamma_matrix.RotateToB1(params);
+  // Handle mass vs flavor basis decoherence
+  if( decoherence_basis == flavor ) {
+      decoherence_gamma_matrix.RotateToB0(params);
+  }
+
   
 }
 
