@@ -47,7 +47,7 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     // Enable/disable the decoherence D[rho] operator
     void EnableDecoherence(bool enable);
 
-    // Get.set basis in which decoherence Gamma matrix is defined
+    // Get/set basis in which decoherence Gamma matrix is defined
     void Set_DecoherenceBasis(Basis basis);
     Basis Get_DecoherenceBasis();
 
@@ -121,6 +121,14 @@ class nuSQUIDSAtmDecoh : public nuSQUIDSAtm<nuSQUIDSDecoh> {
 
     void EnableDecoherence(bool enable) {
       for(nuSQUIDSDecoh& nsq : nusq_array) nsq.EnableDecoherence(enable);
+    }
+
+    // Get/set basis in which decoherence Gamma matrix is defined
+    void Set_DecoherenceBasis(Basis basis) {
+      for(nuSQUIDSDecoh& nsq : nusq_array) nsq.Set_DecoherenceBasis(basis);
+    }
+    Basis Get_DecoherenceBasis() {
+      return nusq_array[0].Get_DecoherenceBasis();
     }
 
     // Wrap decoherence Gamma matrix getters/setters
