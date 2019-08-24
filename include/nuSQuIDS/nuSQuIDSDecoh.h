@@ -29,7 +29,8 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     nuSQUIDSDecoh(unsigned int numneu, NeutrinoType NT = neutrino)
       : nuSQUIDS(numneu,NT)
       , decoherence_gamma_matrix(numneu)
-      , n_energy(0.)
+      , gamma_energy_dep_index(0.)
+      , gamma_energy_scale(0.)
       , units()
     { init(); }
 
@@ -38,7 +39,8 @@ class nuSQUIDSDecoh: public nuSQUIDS {
        bool iinteraction = false, std::shared_ptr<NeutrinoCrossSections> ncs = nullptr)
       : nuSQUIDS(E_vector,numneu,NT,iinteraction,ncs)
       , decoherence_gamma_matrix(numneu)
-      , n_energy(0.)
+      , gamma_energy_dep_index(0.)
+      , gamma_energy_scale(0.)
       , units()
     { init(); }
 
@@ -49,7 +51,7 @@ class nuSQUIDSDecoh: public nuSQUIDS {
 
     // Get/set basis in which decoherence Gamma matrix is defined
     void Set_DecoherenceBasis(Basis basis);
-    Basis Get_DecoherenceBasis();
+    Basis Get_DecoherenceBasis() const;
 
     // Set the Gamma decoherence matrix elements individually
     void Set_DecoherenceGammaMatrix(const marray<double,2>& dmat);
@@ -61,13 +63,16 @@ class nuSQUIDSDecoh: public nuSQUIDS {
 
     // Get the current value of the decoherence matrix
     marray<double,2> Get_DecoherenceGammaMatrix() const;
+    // Get/set energy scale (E0) relative to which decoherence Gamma matrix is defined
 
-    // Set the energy dependence using the form:  Gamma = Gamma_0 * (E/E_0) ^ n_energy
+    // Get/set the energy dependence using the form:  Gamma = Gamma_0 * (E/E_0) ^ n_energy
     // See https://arxiv.org/abs/1803.04438.pdf equation 2.13
     void Set_DecoherenceGammaEnergyDependence(double n_energy);
-
-    // Get the current value of the energy depedence 
     double Get_DecoherenceGammaEnergyDependence() const;
+
+    // Get/set energy scale (E0) relative to which decoherence Gamma matrix is defined
+    void Set_DecoherenceGammaEnergyScale(double energy);
+    double Get_DecoherenceGammaEnergyScale() const;
 
     void PrintTransformationMatrix() const;
     void PrintState() const;
@@ -90,7 +95,10 @@ class nuSQUIDSDecoh: public nuSQUIDS {
     std::unique_ptr<gsl_matrix_complex> decoherence_gamma_gsl_matrix;
 
     // Index of Gamma energy dependence
-    double n_energy;
+    double gamma_energy_dep_index;
+
+    // Energy scale
+    double gamma_energy_scale; // E0
 
     // Function to return D[rho] (result of decohernce operator on rho)
     squids::SU_vector D_Rho(unsigned int ei,unsigned int index_rho, double t) const override;
@@ -127,7 +135,7 @@ class nuSQUIDSAtmDecoh : public nuSQUIDSAtm<nuSQUIDSDecoh> {
     void Set_DecoherenceBasis(Basis basis) {
       for(nuSQUIDSDecoh& nsq : nusq_array) nsq.Set_DecoherenceBasis(basis);
     }
-    Basis Get_DecoherenceBasis() {
+    Basis Get_DecoherenceBasis() const {
       return nusq_array[0].Get_DecoherenceBasis();
     }
 
@@ -153,6 +161,14 @@ class nuSQUIDSAtmDecoh : public nuSQUIDSAtm<nuSQUIDSDecoh> {
       return nusq_array[0].Get_DecoherenceGammaEnergyDependence();
     }
 
+    // Wrap decoherence energy scale getters/setters
+    void Set_DecoherenceGammaEnergyScale(double energy) {
+      for(nuSQUIDSDecoh& nsq : nusq_array) nsq.Set_DecoherenceGammaEnergyScale(energy);
+    }
+
+    double Get_DecoherenceGammaEnergyScale() const {
+      return nusq_array[0].Get_DecoherenceGammaEnergyScale();
+    }
 
 };
 

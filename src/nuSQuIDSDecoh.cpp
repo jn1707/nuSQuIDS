@@ -43,8 +43,10 @@ void nuSQUIDSDecoh::init() {
   // Initialise the decoherence matrix (default is no decoherence)
   decoherence_gamma_matrix.SetAllComponents(0.);
 
-  // Default to mass basis for decoherence definition
+  // Choose some defaults
   Set_DecoherenceBasis(mass);
+  Set_DecoherenceGammaEnergyDependence(0);
+  Set_DecoherenceGammaEnergyScale(1.*units.GeV);
   
 }
 
@@ -54,7 +56,7 @@ void nuSQUIDSDecoh::Set_DecoherenceBasis(Basis basis) {
 }
 
 
-Basis nuSQUIDSDecoh::Get_DecoherenceBasis() {
+Basis nuSQUIDSDecoh::Get_DecoherenceBasis() const {
   return decoherence_basis;
 }
 
@@ -150,13 +152,20 @@ marray<double,2> nuSQUIDSDecoh::Get_DecoherenceGammaMatrix() const {
 }
 
 
-
 void nuSQUIDSDecoh::Set_DecoherenceGammaEnergyDependence(double n)  {
-  n_energy = n; 
+  gamma_energy_dep_index = n; 
 }
 
 double nuSQUIDSDecoh::Get_DecoherenceGammaEnergyDependence() const {
-  return n_energy; 
+  return gamma_energy_dep_index; 
+}
+
+void nuSQUIDSDecoh::Set_DecoherenceGammaEnergyScale(double energy)  {
+  gamma_energy_scale = energy; 
+}
+
+double nuSQUIDSDecoh::Get_DecoherenceGammaEnergyScale() const {
+  return gamma_energy_scale; 
 }
 
 
@@ -188,8 +197,8 @@ squids::SU_vector nuSQUIDSDecoh::D_Rho(unsigned int ei,unsigned int index_rho, d
 
 
   // Get the energy dependence of the Gamma damping parameters for this energy
-  // Note that we define the Gamma value relative to its value at 1 GeV
-  double energy_dependence = pow( E_range[ei] * units.GeV, n_energy);
+  // Note that we define the Gamma value relative to some user-defined scale
+  double energy_dependence = pow( (E_range[ei] / gamma_energy_scale) , gamma_energy_dep_index);
 
   // Perform element-wise SU vector multiplication to get D[rho] operator (as a NxN GSL matrix)
   // Include the energy dependence
