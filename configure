@@ -340,8 +340,8 @@ if [ "$HDF5_INCDIR" -a "$HDF5_LIBDIR" ]; then
 	if [ -d "$HDF5_INCDIR" \
          -a -e "$HDF5_INCDIR/H5version.h" \
          -a -d "$HDF5_LIBDIR" \
-         -a -e "$HDF5_LIBDIR/libhdf5.a" \
-         -a -e "$HDF5_LIBDIR/libhdf5_hl.a" ]; then
+         -a -e "$HDF5_LIBDIR/libhdf5${DYN_SUFFIX}" \
+         -a -e "$HDF5_LIBDIR/libhdf5_hl${DYN_SUFFIX}" ]; then
 		HDF5_FOUND=1
 		HDF5_CFLAGS="-I$HDF5_INCDIR"
 		HDF5_LDFLAGS="-L$HDF5_LIBDIR -lhdf5 -lhdf5_hl"
@@ -482,8 +482,8 @@ EXAMPLES_FLAGS=-I$(INCnuSQUIDS) $(CXXFLAGS) $(CFLAGS)
 
 # Project files
 NAME=nuSQuIDS
-STAT_PRODUCT=lib/lib$(NAME).a
-DYN_PRODUCT=lib/lib$(NAME)$(DYN_SUFFIX)
+STAT_PRODUCT=$(PATH_nuSQUIDS)/lib/lib$(NAME).a
+DYN_PRODUCT=$(PATH_nuSQUIDS)/lib/lib$(NAME)$(DYN_SUFFIX)
 
 # Compilation rules
 all: $(STAT_PRODUCT) $(DYN_PRODUCT)
