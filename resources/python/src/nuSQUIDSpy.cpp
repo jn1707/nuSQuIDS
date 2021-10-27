@@ -136,6 +136,7 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
 
   RegisterBasicNuSQuIDSPythonBindings<nuSQUIDS>("nuSQUIDS");
   RegisterBasicAtmNuSQuIDSPythonBindings<nuSQUIDS>("nuSQUIDSAtm");
+  RegisterBasicLayerNuSQuIDSPythonBindings<nuSQUIDS>("nuSQUIDSLayers");
 
   class_<NeutrinoCrossSections, std::shared_ptr<NeutrinoCrossSections>, boost::noncopyable >("NeutrinoCrossSections", no_init);
 
@@ -154,9 +155,8 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def(init<std::string>())
     .def("TotalCrossSection",&NeutrinoDISCrossSectionsFromTables::TotalCrossSection)
     .def("SingleDifferentialCrossSection",&NeutrinoDISCrossSectionsFromTables::SingleDifferentialCrossSection)
-    .def("GetNumE",&NeutrinoDISCrossSectionsFromTables::GetNumE)
-    .def("GetEmin",&NeutrinoDISCrossSectionsFromTables::GetEmax)
-    .def("IsInit",&NeutrinoDISCrossSectionsFromTables::IsInit)
+    .def("GetEmin",&NeutrinoDISCrossSectionsFromTables::GetEmin)
+    .def("GetEmax",&NeutrinoDISCrossSectionsFromTables::GetEmax)
     .def("WriteHDF",&NeutrinoDISCrossSectionsFromTables::WriteHDF)
     .def("WriteText",&NeutrinoDISCrossSectionsFromTables::WriteText)
   ;
@@ -178,6 +178,8 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
   ;
 
   class_<squids::Const, boost::noncopyable>("Const")
+    .def_readonly("GF",&squids::Const::GF)
+    .def_readonly("Na",&squids::Const::Na)
     .def_readonly("PeV",&squids::Const::PeV)
     .def_readonly("TeV",&squids::Const::TeV)
     .def_readonly("GeV",&squids::Const::GeV)
@@ -297,6 +299,7 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
   {
     scope outer
     = class_<Sun, bases<Body>, std::shared_ptr<Sun> >("Sun")
+    .def(init<std::string>())
     ;
 
     class_<Sun::Track, std::shared_ptr<Sun::Track> >("Track", init<double>())
@@ -315,6 +318,7 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
   {
     scope outer
     = class_<SunASnu, bases<Body>, std::shared_ptr<SunASnu> >("SunASnu")
+    .def(init<std::string>())
     ;
 
     class_<SunASnu::Track, std::shared_ptr<SunASnu::Track> >("Track", init<double>())
@@ -337,6 +341,7 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     ;
 
     class_<EarthAtm::Track, std::shared_ptr<EarthAtm::Track> >("Track", init<double>())
+    .def(init<double,double>())
     .def("GetInitialX",&EarthAtm::Track::GetInitialX)
     .def("GetFinalX",&EarthAtm::Track::GetFinalX)
     .def("GetX",&EarthAtm::Track::GetX)

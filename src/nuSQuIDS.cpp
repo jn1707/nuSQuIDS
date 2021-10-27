@@ -64,8 +64,10 @@ void nuSQUIDS::init(double xini){
 
   if (NT == neutrino || NT == antineutrino)
     nrhos = 1;
+  else if (NT == both)
+    nrhos = 2;
   else {
-    throw std::runtime_error("nuSQUIDS::Error::NT = {neutrino,antineutrino} not : " + std::to_string(NT));
+    throw std::runtime_error("nuSQUIDS::Error::NT = {neutrino,antineutrino,both} not : " + std::to_string(NT));
   }
 
   if ( numneu > SQUIDS_MAX_HILBERT_DIM )
@@ -76,7 +78,14 @@ void nuSQUIDS::init(double xini){
   nsun = numneu;
 
   //initialize SQUIDS
-  ini(ne,numneu,1,0,xini);
+  try {
+    // initialize SQUIDS
+    ini(ne,numneu,nrhos,0,xini);
+  } catch (std::exception& ex) {
+    std::cerr << ex.what() << std::endl;
+    throw std::runtime_error("nuSQUIDS::init : Failed while trying to initialize SQuIDS.");
+  }
+  
   Set_CoherentRhoTerms(true);
   Set_h(1.*params.km);
   Set_h_max(std::numeric_limits<double>::max() );
@@ -85,35 +94,46 @@ void nuSQUIDS::init(double xini){
   // set parameters to default   //
   //===============================
 
-  Set_MixingParametersToDefault();
-
-  //===============================
-  // physics CP sign for aneu    //
-  //===============================
-  if ( NT == antineutrino ){
-    for(unsigned int i = 0; i < numneu; i++){
-      for(unsigned int j = i+1; j < numneu; j++){
-        Set_CPPhase(i,j,-Get_CPPhase(i,j));
-      }
-    }
+  try{
+    Set_MixingParametersToDefault();
+  } catch (std::exception& ex) {
+    std::cerr << ex.what() << std::endl;
+    throw std::runtime_error("nuSQUIDS::init : Failed while trying to set default mixing parameters [Set_MixingParametersToDetaul]");
   }
+
   //===============================
   // init projectors             //
   //===============================
 
-  iniProjectors();
+  try{
+    iniProjectors();
+  } catch (std::exception& ex) {
+    std::cerr << ex.what() << std::endl;
+    throw std::runtime_error("nuSQUIDS::init : Failed while trying initialize projectors [iniProjectors]");
+  }
 
   //===============================
   // init square mass difference //
   //===============================
 
-  H0_array.resize(std::vector<size_t>{ne});
-  for(unsigned int ie = 0; ie < ne; ie++){
-    H0_array[ie] = squids::SU_vector(nsun);
+  try{
+    H0_array.resize(std::vector<size_t>{ne});
+    for(unsigned int ie = 0; ie < ne; ie++){
+      H0_array[ie] = squids::SU_vector(nsun);
+    }
+    iniH0();
+  } catch (std::exception& ex) {
+    std::cerr << ex.what() << std::endl;
+    throw std::runtime_error("nuSQUIDS::init : Failed while trying initialize vaccum Hamiltonian [iniH0]");
   }
 
-  iniH0();
+  positivization_scale = 300.0*params.km;
 
+  if(iinteraction){
+    Set_NonCoherentRhoTerms(true);
+    Set_OtherRhoTerms(true);
+  }
+  
   //precompute this product for HI to avoid repeating expensive pow() calls.
   HI_constants = params.sqrt2*params.GF*params.Na*pow(params.cm,-3);
 
@@ -125,7 +145,7 @@ void nuSQUIDS::init(double xini){
 
 void nuSQUIDS::Set_E(double Enu){
   if( ne != 1 )
-    throw std::runtime_error("nuSQUIDS::Error:Cannot use Set_E in single energy mode.");
+    throw std::runtime_error("nuSQUIDS::Error:Can only use Set_E in single energy mode.");
   E_range = marray<double,1>{1};
   E_range[0] = Enu;
   Set_xrange(std::vector<double>{Enu});
@@ -280,6 +300,19 @@ void nuSQUIDS::EvolveProjectors(double x){
   std::unique_ptr<double[]> evol_buf(new double[H0_array[0].GetEvolveBufferSize()]);
   for(unsigned int ei = 0; ei < ne; ei++){
     H0_array[ei].PrepareEvolve(evol_buf.get(),x-Get_t_initial());
+    if (evol_lowpass_cutoff > 0){
+      // std::cout << "evol_buf: ";
+      // for (unsigned int i = 0; i < H0_array[ei].GetEvolveBufferSize(); i++){
+      //   std::cout << evol_buf.get()[i] << "  ";
+      // }
+      // std::cout << std::endl;
+      H0_array[ei].LowPassFilter(evol_buf.get(), evol_lowpass_cutoff, evol_lowpass_scale);
+      // std::cout << "evol_buf after filter: ";
+      // for (unsigned int i = 0; i < H0_array[ei].GetEvolveBufferSize(); i++){
+      //   std::cout << evol_buf.get()[i] << "  ";
+      // }
+      // std::cout << std::endl;
+    }
     for(unsigned int rho = 0; rho < nrhos; rho++){
       for(unsigned int flv = 0; flv < numneu; flv++){
         // will only evolve the flavor projectors
@@ -899,22 +932,34 @@ void nuSQUIDS::GetCrossSections(){
         throw std::runtime_error(ss.str());
       }
     };
-
+    
+//     std::cout << "Looking up cross sections. . . ";
+//     std::cout.flush();
+//     std::chrono::high_resolution_clock::time_point t1, t2;
+//     t1 = std::chrono::high_resolution_clock::now();
     for(unsigned int neutype = 0; neutype < nrhos; neutype++){
       for(unsigned int flv = 0; flv < numneu; flv++){
         for(unsigned int e1 = 0; e1 < ne; e1++){
           // differential cross sections
           for(unsigned int e2 = 0; e2 < e1; e2++){
-            dsignudE_NC[neutype][flv][e1][e2] = ncs->SingleDifferentialCrossSection(E_range[e1],E_range[e2],static_cast<NeutrinoCrossSections::NeutrinoFlavor>(flv),neutype_xs_dict[neutype],NeutrinoCrossSections::NC)*cm2GeV;
+            dsignudE_NC[neutype][flv][e1][e2] = ncs->AverageSingleDifferentialCrossSection(E_range[e1],E_range[e2],E_range[e2+1],(NeutrinoCrossSections::NeutrinoFlavor)flv,neutype_xs_dict[neutype],NeutrinoCrossSections::NC)*cm2GeV;
             validateCrossSection(dsignudE_NC[neutype][flv][e1][e2],cm2GeV,"NC",true,E_range[e1],E_range[e2],flv);
-            dsignudE_CC[neutype][flv][e1][e2] = ncs->SingleDifferentialCrossSection(E_range[e1],E_range[e2],static_cast<NeutrinoCrossSections::NeutrinoFlavor>(flv),neutype_xs_dict[neutype],NeutrinoCrossSections::CC)*cm2GeV;
+            dsignudE_CC[neutype][flv][e1][e2] = ncs->AverageSingleDifferentialCrossSection(E_range[e1],E_range[e2],E_range[e2+1],(NeutrinoCrossSections::NeutrinoFlavor)flv,neutype_xs_dict[neutype],NeutrinoCrossSections::CC)*cm2GeV;
             validateCrossSection(dsignudE_CC[neutype][flv][e1][e2],cm2GeV,"CC",true,E_range[e1],E_range[e2],flv);
           }
           // total cross sections
-          int_struct->sigma_CC[neutype][flv][e1] = ncs->TotalCrossSection(E_range[e1],static_cast<NeutrinoCrossSections::NeutrinoFlavor>(flv),neutype_xs_dict[neutype],NeutrinoCrossSections::CC)*cm2;
-          validateCrossSection(int_struct->sigma_CC[neutype][flv][e1],cm2,"CC",false,E_range[e1],0,flv);
-          int_struct->sigma_NC[neutype][flv][e1] = ncs->TotalCrossSection(E_range[e1],static_cast<NeutrinoCrossSections::NeutrinoFlavor>(flv),neutype_xs_dict[neutype],NeutrinoCrossSections::NC)*cm2;
-          validateCrossSection(int_struct->sigma_NC[neutype][flv][e1],cm2,"NC",false,E_range[e1],0,flv);
+          if(e1<ne-1){
+            int_struct->sigma_CC[neutype][flv][e1] = ncs->AverageTotalCrossSection(E_range[e1],E_range[e1+1],(NeutrinoCrossSections::NeutrinoFlavor)flv,neutype_xs_dict[neutype],NeutrinoCrossSections::CC)*cm2;
+          } else {
+            int_struct->sigma_CC[neutype][flv][e1] = ncs->TotalCrossSection(E_range[e1],static_cast<NeutrinoCrossSections::NeutrinoFlavor>(flv),neutype_xs_dict[neutype],NeutrinoCrossSections::CC)*cm2;
+            validateCrossSection(int_struct->sigma_CC[neutype][flv][e1],cm2,"CC",false,E_range[e1],0,flv);
+          }
+          if(e1<ne-1) {
+            int_struct->sigma_NC[neutype][flv][e1] = ncs->AverageTotalCrossSection(E_range[e1],E_range[e1+1],(NeutrinoCrossSections::NeutrinoFlavor)flv,neutype_xs_dict[neutype],NeutrinoCrossSections::NC)*cm2;
+          } else {
+            int_struct->sigma_NC[neutype][flv][e1] = ncs->TotalCrossSection(E_range[e1],static_cast<NeutrinoCrossSections::NeutrinoFlavor>(flv),neutype_xs_dict[neutype],NeutrinoCrossSections::NC)*cm2;
+            validateCrossSection(int_struct->sigma_NC[neutype][flv][e1],cm2,"NC",false,E_range[e1],0,flv);
+          }
         }
       }
     }
@@ -948,7 +993,7 @@ void nuSQUIDS::GetCrossSections(){
       for(unsigned int e1 = 0; e1 < ne; e1++){
         int_struct->sigma_GR[e1] = gr_cs.TotalCrossSection(E_range[e1],NeutrinoCrossSections::electron,NeutrinoCrossSections::antineutrino,NeutrinoCrossSections::GR)*cm2;
         for(unsigned int e2 = 0; e2 < e1; e2++){
-          dsignudE_GR[e1][e2] = gr_cs.SingleDifferentialCrossSection(E_range[e1],E_range[e2],NeutrinoCrossSections::electron,NeutrinoCrossSections::antineutrino,NeutrinoCrossSections::GR)*cm2GeV;
+          dsignudE_GR[e1][e2] = gr_cs.AverageSingleDifferentialCrossSection(E_range[e1],E_range[e2],E_range[e2+1],NeutrinoCrossSections::electron,NeutrinoCrossSections::antineutrino,NeutrinoCrossSections::GR)*cm2GeV;
         }
       }
       for(unsigned int e1 = 0; e1 < ne; e1++){
@@ -979,6 +1024,10 @@ void nuSQUIDS::GetCrossSections(){
           }
       }
     }
+    
+//     t2 = std::chrono::high_resolution_clock::now();
+//     double time=std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
+//     std::cout << time << " seconds" << std::endl;
 }
 
 void nuSQUIDS::Set_Body(std::shared_ptr<Body> body_in){
@@ -1099,8 +1148,6 @@ void nuSQUIDS::Set_initial_state(const marray<double,1>& v, Basis basis){
     throw std::runtime_error("nuSQUIDS::Error::Initial state size not compatible with number of flavors.");
   if( not (basis == flavor || basis == mass ))
     throw std::runtime_error("nuSQUIDS::Error::BASIS can be: flavor or mass.");
-  if( NT == both )
-    throw std::runtime_error("nuSQUIDS::Error::Only supplied neutrino/antineutrino initial state, but set to both.");
   if( ne != 1 )
     throw std::runtime_error("nuSQUIDS::Error::nuSQUIDS initialized in multienergy mode, while state is only single energy.");
   if( !itrack or !ibody )
@@ -1368,7 +1415,7 @@ double nuSQUIDS::EvalMass(unsigned int flv) const{
   return GetExpectationValue(b0_proj[flv], 0, 0);
 }
 
-double nuSQUIDS::EvalFlavor(unsigned int flv) const{
+double nuSQUIDS::EvalFlavor(unsigned int flv, unsigned int rho) const{
   if(state == nullptr)
     throw std::runtime_error("nuSQUIDS::Error::State not initialized.");
   if(not inusquids)
@@ -1379,12 +1426,14 @@ double nuSQUIDS::EvalFlavor(unsigned int flv) const{
     throw std::runtime_error("nuSQUIDS::Error::Use this function only in single energy mode.");
   if( flv >= nsun )
     throw std::runtime_error("nuSQUIDS::Error::Flavor index greater than number of initialized flavors.");
+  if ( rho != 0 and NT != both )
+    throw std::runtime_error("nuSQUIDS::Error::Cannot evaluate rho != 0 in this NT mode.");
 
   if(basis == mass)
-    return b1_proj[0][flv]*state[0].rho[0];
+    return b1_proj[0][flv]*state[0].rho[rho];
   if(use_full_hamiltonian_for_projector_evolution)
-    return evol_b1_proj[0][flv][0]*state[0].rho[0];
-  return GetExpectationValue(b1_proj[0][flv], 0, 0);
+    return evol_b1_proj[0][flv][0]*state[0].rho[rho];
+  return GetExpectationValue(b1_proj[0][flv], rho, 0);
 }
 
 void nuSQUIDS::iniH0(){
@@ -2192,21 +2241,46 @@ void nuSQUIDS::ReadStateHDF5(std::string str,std::string grp,std::string cross_s
     }
 
     // dNdE_tau_all,dNdE_tau_lep
-    hsize_t dNdEtaudim[3];
-    H5LTget_dataset_info(xs_grp,"dNdEtauall", dNdEtaudim,nullptr,nullptr);
+    int tau_spectra_rank;
+    H5LTget_dataset_ndims(xs_grp,"dNdEtauall",&tau_spectra_rank);
+    if(tau_spectra_rank == 3){
+      // taking account polarization of taus spectra
+      hsize_t dNdEtaudim[3];
+      H5LTget_dataset_info(xs_grp,"dNdEtauall", dNdEtaudim,nullptr,nullptr);
 
-    std::unique_ptr<double[]> dNdEtauall(new double[dNdEtaudim[0]*dNdEtaudim[1]*dNdEtaudim[2]]);
-    H5LTread_dataset_double(xs_grp,"dNdEtauall", dNdEtauall.get());
-    std::unique_ptr<double[]> dNdEtaulep(new double[dNdEtaudim[0]*dNdEtaudim[1]*dNdEtaudim[2]]);
-    H5LTread_dataset_double(xs_grp,"dNdEtaulep", dNdEtaulep.get());
+      std::unique_ptr<double[]> dNdEtauall(new double[dNdEtaudim[0]*dNdEtaudim[1]*dNdEtaudim[2]]);
+      H5LTread_dataset_double(xs_grp,"dNdEtauall", dNdEtauall.get());
+      std::unique_ptr<double[]> dNdEtaulep(new double[dNdEtaudim[0]*dNdEtaudim[1]*dNdEtaudim[2]]);
+      H5LTread_dataset_double(xs_grp,"dNdEtaulep", dNdEtaulep.get());
 
-    for(unsigned int rho = 0; rho < nrhos; rho++){
-      for( unsigned int e1 = 0; e1 < ne; e1++){
-          for( unsigned int e2 = 0; e2 < e1; e2++){
-            int_struct->dNdE_tau_all[rho][e1][e2] = dNdEtauall[rho*(ne*ne) + e1*ne + e2];
-            int_struct->dNdE_tau_lep[rho][e1][e2] = dNdEtaulep[rho*(ne*ne) + e1*ne + e2];
-          }
+      for(unsigned int rho = 0; rho < nrhos; rho++){
+        for( unsigned int e1 = 0; e1 < ne; e1++){
+            for( unsigned int e2 = 0; e2 < e1; e2++){
+              int_struct->dNdE_tau_all[rho][e1][e2] = dNdEtauall[rho*(ne*ne) + e1*ne + e2];
+              int_struct->dNdE_tau_lep[rho][e1][e2] = dNdEtaulep[rho*(ne*ne) + e1*ne + e2];
+            }
+        }
       }
+    } else if (tau_spectra_rank == 2) {
+      // averaging out taus polarization spectra -- LEGACY
+      hsize_t dNdEtaudim[2];
+      H5LTget_dataset_info(xs_grp,"dNdEtauall", dNdEtaudim,nullptr,nullptr);
+
+      std::unique_ptr<double[]> dNdEtauall(new double[dNdEtaudim[0]*dNdEtaudim[1]]);
+      H5LTread_dataset_double(xs_grp,"dNdEtauall", dNdEtauall.get());
+      std::unique_ptr<double[]> dNdEtaulep(new double[dNdEtaudim[0]*dNdEtaudim[1]]);
+      H5LTread_dataset_double(xs_grp,"dNdEtaulep", dNdEtaulep.get());
+
+      for(unsigned int rho = 0; rho < nrhos; rho++){
+        for( unsigned int e1 = 0; e1 < ne; e1++){
+            for( unsigned int e2 = 0; e2 < e1; e2++){
+              int_struct->dNdE_tau_all[rho][e1][e2] = dNdEtauall[e1*ne + e2];
+              int_struct->dNdE_tau_lep[rho][e1][e2] = dNdEtaulep[e1*ne + e2];
+            }
+        }
+      }
+    } else {
+      throw std::runtime_error("nuSQUIDS::ReadStateHDF5: Error. Misformed HDF5 files when trying to deserialize tau decay distributions.");
     }
 
     nc_factors.resize(std::vector<size_t>{nrhos,3,ne});
@@ -2345,6 +2419,13 @@ void nuSQUIDS::Set_ProgressBar(bool opt){
   progressbar = opt;
 }
 
+void nuSQUIDS::Set_EvolLowPassCutoff(double val){
+  evol_lowpass_cutoff = val;
+}
+
+void nuSQUIDS::Set_EvolLowPassScale(double val){
+  evol_lowpass_scale = val;
+}
 
 void nuSQUIDS::Set_IncludeOscillations(bool opt){
   ioscillations = opt;
