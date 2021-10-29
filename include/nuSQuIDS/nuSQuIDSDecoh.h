@@ -170,6 +170,61 @@ class nuSQUIDSDecohAtm : public nuSQUIDSAtm<nuSQUIDSDecoh> {
 
 
 
+
+/*
+  nuSQUIDSLayers extended to include decoherence
+*/
+
+class nuSQUIDSDecohLayers : public nuSQUIDSLayers<nuSQUIDSDecoh> {
+
+  public:
+
+    // Use the base class constructors
+    using nuSQUIDSLayers<nuSQUIDSDecoh>::nuSQUIDSLayers;
+
+    // TODO Copy and move constructors...
+
+    // Wrap all the getters/setters
+    void Set_Debug(bool debug) {
+      for(nuSQUIDSDecoh& nsq : this->GetnuSQuIDS()) nsq.Set_Debug(debug);
+    } 
+
+    void EnableDecoherence(bool enable) {
+      for(nuSQUIDSDecoh& nsq : this->GetnuSQuIDS()) nsq.EnableDecoherence(enable);
+    }
+
+    void Set_DecoherenceGammaMatrix(const marray<double,2>& dmat) {
+      for(nuSQUIDSDecoh& nsq : this->GetnuSQuIDS()) nsq.Set_DecoherenceGammaMatrix(dmat);
+    }
+
+    void Set_DecoherenceGammaMatrixDiagonal(const marray<double,1>& dmat, bool standard_gell_mann=true) {
+      for(nuSQUIDSDecoh& nsq : this->GetnuSQuIDS()) nsq.Set_DecoherenceGammaMatrixDiagonal(dmat, standard_gell_mann);
+    }
+
+    marray<double,2> Get_DecoherenceGammaMatrix() {
+      return this->GetnuSQuIDS(0).Get_DecoherenceGammaMatrix();
+    }
+
+    void Set_DecoherenceGammaEnergyDependence(double n_energy) {
+      for(nuSQUIDSDecoh& nsq : this->GetnuSQuIDS()) nsq.Set_DecoherenceGammaEnergyDependence(n_energy);
+    }
+
+    double Get_DecoherenceGammaEnergyDependence() {
+      return this->GetnuSQuIDS(0).Get_DecoherenceGammaEnergyDependence();
+    }
+
+    void Set_DecoherenceGammaEnergyScale(double energy) {
+      for(nuSQUIDSDecoh& nsq : this->GetnuSQuIDS()) nsq.Set_DecoherenceGammaEnergyScale(energy);
+    }
+
+    double Get_DecoherenceGammaEnergyScale() {
+      return this->GetnuSQuIDS(0).Get_DecoherenceGammaEnergyScale();
+    }
+
+};
+
+
+
 } // close namespace
 
 #endif //NUSQUIDSDECOH_H
