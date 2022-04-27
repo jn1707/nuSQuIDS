@@ -4,6 +4,10 @@ Tom Stuttard, Mikkel Jensen (Niels Bohr Institute)
 */
 #include <math.h>
 #include <nuSQuIDS/nuSQuIDSDecoh.h>
+#include <tuple>
+#include <iostream> // This can maybe be removed
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_eigen.h>
 
 //TODO Put this somewhere generic, with proper const correctness, etc
 // #include <iostream>
@@ -55,7 +59,12 @@ void nuSQUIDSDecoh::init() {
   // Set_DecoherenceBasis(mass);
   Set_DecoherenceGammaEnergyDependence(0.); // Energy-independent
   Set_DecoherenceGammaEnergyScale(1.*units.GeV); // E0 = 1 GeV
-  
+  Set_mLengthDependenceIndex(0.5);
+  Set_UseLightconeFluctuations(false);
+  Set_dL0(28.*units.km);
+  Set_L0LengthScale(1.*units.km);
+  Set_DampingPower(0);
+  Set_EtaParam(1./4.4);
 }
 
 
@@ -209,42 +218,167 @@ double nuSQUIDSDecoh::Get_DecoherenceGammaEnergyScale() const {
     return gamma_energy_scale; 
 }
 
+void nuSQUIDSDecoh::Set_UseLightconeFluctuations(bool opt)  {
+    use_lightcone_fluctuations = opt;
+    if(use_lightcone_fluctuations){
+      std::cout << "WARNING: Lightcone fluctuations do not give correct results for matter. Are you calculating it for vacuum?" << std::endl;
+    }
+}
+
+double nuSQUIDSDecoh::Get_UseLightconeFluctuations() const {
+    return use_lightcone_fluctuations; 
+}
+
+void nuSQUIDSDecoh::Set_mLengthDependenceIndex(double m)  {
+    m_length_dependence_index = m; 
+}
+
+double nuSQUIDSDecoh::Get_mLengthDependenceIndex() const {
+    return m_length_dependence_index; 
+}
+
+void nuSQUIDSDecoh::Set_dL0(double value)  {
+    dL0 = value;
+}
+
+double nuSQUIDSDecoh::Get_dL0() const {
+    return dL0; 
+}
+
+void nuSQUIDSDecoh::Set_L0LengthScale(double L0)  {
+    L0_length_scale = L0; 
+}
+
+double nuSQUIDSDecoh::Get_L0LengthScale() const {
+    return L0_length_scale; 
+}
+
+void nuSQUIDSDecoh::Set_DampingPower(double power)  {
+    damping_power = power; 
+}
+
+double nuSQUIDSDecoh::Get_DampingPower() const {
+    return damping_power; 
+}
+
+void nuSQUIDSDecoh::Set_EtaParam(double eta)  {
+    eta_param = eta; 
+}
+
+double nuSQUIDSDecoh::Get_EtaParam() const {
+    return eta_param; 
+}
+
+
+std::tuple<double, double, double> calc_osc_wavelengths_from_hamiltonian(squids::SU_vector H, double density,unsigned int index_rho, double Energy){ // This function is probably wrong. It just uses the diagonal of the 3x3 hamiltonian to calculate the wavelengths:
+  
+  double pi = M_PI;
+  double osc_wavelength_21;
+  double osc_wavelength_31;
+  double osc_wavelength_32;
+  std::tuple<double, double, double> osc_wavelengths;
+  
+  // Build 3x3 (complex) Hamiltonian from SU(3) expansion (diagonal elements are calculated first for clarity):
+  double H11 = H[0] + H[4] + H[8]/sqrt(3.);
+  double H22 = H[0] - H[4] + H[8]/sqrt(3.);
+  double H33 = H[0] - 2*H[8]/sqrt(3.);
+  double Hamiltonian3x3[] = { H11,    0,        H[1],   -H[3],    H[2],   -H[6],
+                              H[1],   +H[3],    H22,    0,        H[5],   -H[7],
+                              H[2],   +H[6],    H[5],   +H[7],    H33,    0     };
+
+  // Get eigenvalues of Hamiltonian:
+  gsl_matrix_complex_view M = gsl_matrix_complex_view_array(Hamiltonian3x3, 3, 3);
+  gsl_vector *eigenvalues = gsl_vector_alloc(3);
+  gsl_eigen_herm_workspace *W = gsl_eigen_herm_alloc(3);
+  gsl_eigen_herm(&M.matrix, eigenvalues, W);
+
+  // Use nu or nubar effective mass splittings for oscillation wavelengths:
+  osc_wavelength_21 =  abs(2 * pi / ( gsl_vector_get(eigenvalues, 1) - gsl_vector_get(eigenvalues, 0) ) );
+  osc_wavelength_31 =  abs(2 * pi / ( gsl_vector_get(eigenvalues, 2) - gsl_vector_get(eigenvalues, 0) ) );
+  osc_wavelength_32 =  abs(2 * pi / ( gsl_vector_get(eigenvalues, 2) - gsl_vector_get(eigenvalues, 1) ) );
+  osc_wavelengths = std::make_tuple(osc_wavelength_21, osc_wavelength_31, osc_wavelength_32);
+
+  // Free memory:
+  gsl_eigen_herm_free(W);
+  gsl_vector_free(eigenvalues);
+
+  return osc_wavelengths;
+}
+
+
 
 squids::SU_vector nuSQUIDSDecoh::DRho(unsigned int ei,unsigned int index_rho, double t) const {
 
-    // Define shifts between mass and interaction basis
-    //double int_to_mass_basis_time_shift = Get_t_initial() - t; // Backwards in time from t to t0
-    //double mass_to_int_basis_time_shift = t - Get_t_initial(); // Forwards in time from t0 to t
+  // Define shifts between mass and interaction basis
+  //double int_to_mass_basis_time_shift = Get_t_initial() - t; // Backwards in time from t to t0
+  //double mass_to_int_basis_time_shift = t - Get_t_initial(); // Forwards in time from t0 to t
+  std::vector<double> DRho_components(num_basis_vectors, 0.);
 
+
+  if(!use_lightcone_fluctuations){
+    // nu-VBH interactions:
     // Scale the gamma matrix according to the energy dependence
     double energy_dependence = pow( (E_range[ei] / gamma_energy_scale) , gamma_energy_dep_index);
 
     // Compute the decoherence operator, D[rho]
     //TODO reference my paper
     auto rho_components = estate[ei].rho[index_rho].GetComponents();
-    std::vector<double> DRho_components(num_basis_vectors, 0.);
     for( unsigned int i = 0 ; i < num_basis_vectors ; ++i ) {
-        DRho_components[i] = 0.;
-        for( unsigned int j = 0 ; j < num_basis_vectors ; ++j ) {
-            DRho_components[i] += GSL_REAL(gsl_matrix_complex_get(decoherence_gamma_matrix.get(),i,j)) * rho_components[j] * energy_dependence; //TODO imag
-        }
+      DRho_components[i] = 0.;
+      for( unsigned int j = 0 ; j < num_basis_vectors ; ++j ) {
+          DRho_components[i] += GSL_REAL(gsl_matrix_complex_get(decoherence_gamma_matrix.get(),i,j)) * rho_components[j] * energy_dependence; //TODO imag
+      }
     }
-    squids::SU_vector DRho_value(DRho_components);
+  } else if(use_lightcone_fluctuations){
+    // Lightcone fluctuations:
+    
+    // Calculate oscillation wavelengths from the hamiltonian:
+    squids::SU_vector H0 = nuSQUIDS::H0(E_range[ei],index_rho);
+    squids::SU_vector HI = nuSQUIDS::HI(ei,index_rho,t);
+    squids::SU_vector HI_changed = HI;
+    HI_changed[0] *= -2; // This is the factor of -2 that should probably be understood why it is here.
+    squids::SU_vector H_total = H0+HI_changed;
+    std::tuple<double, double, double> osc_wavelengths = calc_osc_wavelengths_from_hamiltonian(H_total, body->density(*track),index_rho,E_range[ei]);
 
-    return DRho_value;
+    // Scale the gamma matrix according to the energy dependence:
+    double energy_dependence = pow( (E_range[ei] / gamma_energy_scale) , damping_power*gamma_energy_dep_index);
+    
+    // Scale the gamma matrix according to the length dependence:
+    double length_dependence = damping_power*m_length_dependence_index * pow(dL0 , damping_power) * pow(t , damping_power*m_length_dependence_index-1) / pow(L0_length_scale , damping_power*m_length_dependence_index);
 
+    // Compute the decoherence operator, D[rho]
+    //TODO reference my paper
+    auto rho_components = estate[ei].rho[index_rho].GetComponents();
+    for( unsigned int i = 0 ; i < num_basis_vectors ; ++i ) {
+      DRho_components[i] = 0.;
+
+      // Get wavelength dependent factor:
+      double wavelength_dependence;
+      if(i==1 or i==3){wavelength_dependence = 1 / pow(eta_param*std::get<0>(osc_wavelengths),damping_power);} //1 / pow(eta_param*osc_wavelength_21,damping_power);}
+      else if(i==2 or i==6){wavelength_dependence = 1 / pow(eta_param*std::get<1>(osc_wavelengths),damping_power);} //1 / pow(eta_param*osc_wavelength_31,damping_power);}
+      else if(i==5 or i==7){wavelength_dependence = 1 / pow(eta_param*std::get<2>(osc_wavelengths),damping_power);} //1 / pow(eta_param*osc_wavelength_32,damping_power);}
+      
+      for( unsigned int j = 0 ; j < num_basis_vectors ; ++j ) {
+          DRho_components[i] += GSL_REAL(gsl_matrix_complex_get(decoherence_gamma_matrix.get(),i,j)) * rho_components[j];
+      }
+      DRho_components[i] *= length_dependence * energy_dependence * wavelength_dependence;
+    }
+  }
+
+  squids::SU_vector DRho_value(DRho_components);
+  return DRho_value;
 }
 
 
-// void nuSQUIDSDecoh::PrintTransformationMatrix() const {
-//   auto transformation_matrix = GetTransformationMatrix().get();
-//   for(unsigned int i = 0 ; i < nsun ; ++i) {
-//     for(unsigned int j = 0 ; j < nsun ; ++j) {
-//       std::cout << GSL_REAL(gsl_matrix_complex_get(transformation_matrix,i,j)) << " + " << GSL_IMAG(gsl_matrix_complex_get(transformation_matrix,i,j)) << "i   "; 
-//     }
-//     std::cout << std::endl;
-//   }
-// }
+void nuSQUIDSDecoh::PrintTransformationMatrix() const {
+  auto transformation_matrix = GetTransformationMatrix().get();
+  for(unsigned int i = 0 ; i < nsun ; ++i) {
+    for(unsigned int j = 0 ; j < nsun ; ++j) {
+      std::cout << GSL_REAL(gsl_matrix_complex_get(transformation_matrix,i,j)) << " + " << GSL_IMAG(gsl_matrix_complex_get(transformation_matrix,i,j)) << "i   "; 
+    }
+    std::cout << std::endl;
+  }
+}
 
 
 // void nuSQUIDSDecoh::PrintState() const {
