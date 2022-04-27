@@ -33,6 +33,24 @@ BOOST_PYTHON_MODULE(nuSQUIDSDecohPy)
     nusquids_decoh_class_object->def("Set_DecoherenceGammaEnergyScale",&nuSQUIDSDecoh::Set_DecoherenceGammaEnergyScale);
     nusquids_decoh_class_object->def("Get_DecoherenceGammaEnergyScale",&nuSQUIDSDecoh::Get_DecoherenceGammaEnergyScale);
 
+    nusquids_decoh_class_object->def("Set_UseLightconeFluctuations",&nuSQUIDSDecoh::Set_UseLightconeFluctuations);
+    nusquids_decoh_class_object->def("Get_UseLightconeFluctuations",&nuSQUIDSDecoh::Get_UseLightconeFluctuations);
+
+    nusquids_decoh_class_object->def("Set_mLengthDependenceIndex",&nuSQUIDSDecoh::Set_mLengthDependenceIndex);
+    nusquids_decoh_class_object->def("Get_mLengthDependenceIndex",&nuSQUIDSDecoh::Get_mLengthDependenceIndex);
+
+    nusquids_decoh_class_object->def("Set_dL0",&nuSQUIDSDecoh::Set_dL0);
+    nusquids_decoh_class_object->def("Get_dL0",&nuSQUIDSDecoh::Get_dL0);
+
+    nusquids_decoh_class_object->def("Set_L0LengthScale",&nuSQUIDSDecoh::Set_L0LengthScale);
+    nusquids_decoh_class_object->def("Get_L0LengthScale",&nuSQUIDSDecoh::Get_L0LengthScale);
+
+    nusquids_decoh_class_object->def("Set_DampingPower",&nuSQUIDSDecoh::Set_DampingPower);
+    nusquids_decoh_class_object->def("Get_DampingPower",&nuSQUIDSDecoh::Get_DampingPower);
+
+    nusquids_decoh_class_object->def("Set_EtaParam",&nuSQUIDSDecoh::Set_EtaParam);
+    nusquids_decoh_class_object->def("Get_EtaParam",&nuSQUIDSDecoh::Get_EtaParam);
+    
 
     // nusquids_decoh_atm_class_object->def("Set_DecoherenceGammaEnergyScale",&nuSQUIDSDecohAtm::Get_DecoherenceGammaEnergyScale);
 
@@ -94,6 +112,18 @@ BOOST_PYTHON_MODULE(nuSQUIDSDecohPy)
         .def("Get_DecoherenceGammaEnergyDependence",&nuSQUIDSDecohAtm::Get_DecoherenceGammaEnergyDependence)
         .def("Set_DecoherenceGammaEnergyScale",&nuSQUIDSDecohAtm::Set_DecoherenceGammaEnergyScale)
         .def("Get_DecoherenceGammaEnergyScale",&nuSQUIDSDecohAtm::Get_DecoherenceGammaEnergyScale)
+        .def("Set_UseLightconeFluctuations",&nuSQUIDSDecohAtm::Set_UseLightconeFluctuations)
+        .def("Get_UseLightconeFluctuations",&nuSQUIDSDecohAtm::Get_UseLightconeFluctuations)
+        .def("Set_mLengthDependenceIndex",&nuSQUIDSDecohAtm::Set_mLengthDependenceIndex)
+        .def("Get_mLengthDependenceIndex",&nuSQUIDSDecohAtm::Get_mLengthDependenceIndex)
+        .def("Set_dL0",&nuSQUIDSDecohAtm::Set_dL0)
+        .def("Get_dL0",&nuSQUIDSDecohAtm::Get_dL0)
+        .def("Set_L0LengthScale",&nuSQUIDSDecohAtm::Set_L0LengthScale)
+        .def("Get_L0LengthScale",&nuSQUIDSDecohAtm::Get_L0LengthScale)
+        .def("Set_DampingPower",&nuSQUIDSDecohAtm::Set_DampingPower)
+        .def("Get_DampingPower",&nuSQUIDSDecohAtm::Get_DampingPower)
+        .def("Set_EtaParam",&nuSQUIDSDecohAtm::Set_EtaParam)
+        .def("Get_EtaParam",&nuSQUIDSDecohAtm::Get_EtaParam)
     ;
 
 
@@ -157,6 +187,18 @@ BOOST_PYTHON_MODULE(nuSQUIDSDecohPy)
         .def("Get_DecoherenceGammaEnergyDependence",&nuSQUIDSDecohLayers::Get_DecoherenceGammaEnergyDependence)
         .def("Set_DecoherenceGammaEnergyScale",&nuSQUIDSDecohLayers::Set_DecoherenceGammaEnergyScale)
         .def("Get_DecoherenceGammaEnergyScale",&nuSQUIDSDecohLayers::Get_DecoherenceGammaEnergyScale)
+        .def("Set_UseLightconeFluctuations",&nuSQUIDSDecohLayers::Set_UseLightconeFluctuations)
+        .def("Get_UseLightconeFluctuations",&nuSQUIDSDecohLayers::Get_UseLightconeFluctuations)
+        .def("Set_mLengthDependenceIndex",&nuSQUIDSDecohLayers::Set_mLengthDependenceIndex)
+        .def("Get_mLengthDependenceIndex",&nuSQUIDSDecohLayers::Get_mLengthDependenceIndex)
+        .def("Set_dL0",&nuSQUIDSDecohLayers::Set_dL0)
+        .def("Get_dL0",&nuSQUIDSDecohLayers::Get_dL0)
+        .def("Set_L0LengthScale",&nuSQUIDSDecohLayers::Set_L0LengthScale)
+        .def("Get_L0LengthScale",&nuSQUIDSDecohLayers::Get_L0LengthScale)
+        .def("Set_DampingPower",&nuSQUIDSDecohLayers::Set_DampingPower)
+        .def("Get_DampingPower",&nuSQUIDSDecohLayers::Get_DampingPower)
+        .def("Set_EtaParam",&nuSQUIDSDecohLayers::Set_EtaParam)
+        .def("Get_EtaParam",&nuSQUIDSDecohLayers::Get_EtaParam)
 
 
     //     .def("EvalFlavor",(double(nuSQUIDSDecohLayers::*)(unsigned int,double,double,unsigned int,bool) const)&nuSQUIDSDecohLayers::EvalFlavor, nuSQUIDSDecohLayers_EvalFlavor_overload<nuSQUIDSDecohLayers>(args("Flavor","cos(theta)","Neutrino Energy","NeuType","BoolToRandomzeProdutionHeight"), "nuSQuIDSAtm evaluate flux.."))
