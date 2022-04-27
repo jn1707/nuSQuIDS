@@ -659,9 +659,11 @@ protected:
     /// @param iscalar scalar equation index.
     /// @see GammaScalar for convention on \c iscalar.
     virtual double InteractionsScalar(unsigned int ie, unsigned int iscalar) const;
-  private:
+    
     /// \brief SQuIDS signature of HI
     squids::SU_vector HI(unsigned int ie, unsigned int irho, double x) const {return HI(ie,irho);}
+
+  private:
     /// \brief SQuIDS signature of GammaRho
     squids::SU_vector GammaRho(unsigned int ei, unsigned int irho, double x) const {return GammaRho(ei,irho);}
     /// \brief SQuIDS signature of GammaScalar
