@@ -220,9 +220,6 @@ double nuSQUIDSDecoh::Get_DecoherenceGammaEnergyScale() const {
 
 void nuSQUIDSDecoh::Set_UseLightconeFluctuations(bool opt)  {
     use_lightcone_fluctuations = opt;
-    if(use_lightcone_fluctuations){
-      std::cout << "WARNING: Lightcone fluctuations do not give correct results for matter. Are you calculating it for vacuum?" << std::endl;
-    }
 }
 
 double nuSQUIDSDecoh::Get_UseLightconeFluctuations() const {
