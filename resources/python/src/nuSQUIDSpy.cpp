@@ -22,6 +22,7 @@
  ******************************************************************************/
 
 #include "nuSQUIDSpy.h"
+#include <nuSQuIDS/nuSQuIDSLIV.h>
 
 BOOST_PYTHON_MODULE(nuSQuIDS)
 {
@@ -409,4 +410,21 @@ BOOST_PYTHON_MODULE(nuSQuIDS)
   marray_from_python<2>();
   marray_from_python<3>();
   marray_from_python<4>();
+
+
+  //
+  // LIV
+  //
+
+  //TODO seperate file?
+
+  // Register all standard nuSQuIDS and nuSQuIDS atmospheric functions for the user class
+  auto nusquids_liv_register = RegisterBasicNuSQuIDSPythonBindings<nuSQUIDSLIV>("nuSQUIDSLIV");
+
+  // Register additional functions or members of the user class
+  auto nusquids_liv_class_object = nusquids_liv_register.GetClassObject();
+  nusquids_liv_class_object->def("Set_LIVCoefficient",&nuSQUIDSLIV::Set_LIVCoefficient);
+  nusquids_liv_class_object->def("Set_LIVEnergyDependence",&nuSQUIDSLIV::Set_LIVEnergyDependence);
+
+
 }
