@@ -24,6 +24,11 @@ void print_gsl_matrix(gsl_matrix_complex* matrix) {
 
 namespace nusquids {
 
+
+//
+// nuSQuIDS LIV model
+//
+
 class nuSQUIDSLIV: public nuSQUIDS {
 
   private:
@@ -168,6 +173,26 @@ class nuSQUIDSLIV: public nuSQUIDS {
     void Set_LIVEnergyDependence(int n){
       LIV_n = n;
     }
+
+};
+
+//
+// nuSQuIDS LIV model - atmospheric
+//
+
+class nuSQUIDSLIVAtm : public nuSQUIDSAtm<nuSQUIDSLIV> {
+
+  public:
+
+    // Use the base class constructors
+    using nuSQUIDSAtm<nuSQUIDSLIV>::nuSQUIDSAtm;
+
+    // TODO Copy and move constructors...
+
+    // Wrap all the getters/setters
+    void Set_LIVCoefficient(double cft) {
+      for(nuSQUIDSLIV& nsq : this->GetnuSQuIDS()) nsq.Set_LIVCoefficient(cft);
+    } 
 
 };
 
