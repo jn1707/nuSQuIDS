@@ -22,6 +22,7 @@
  ******************************************************************************/
 
 #include "nuSQUIDSpy.h"
+#include <nuSQuIDS/nuSQuIDSDecoh.h>
 
 BOOST_PYTHON_MODULE(nuSQuIDS)
 {
@@ -409,4 +410,103 @@ BOOST_PYTHON_MODULE(nuSQuIDS)
   marray_from_python<2>();
   marray_from_python<3>();
   marray_from_python<4>();
-}
+
+
+  //
+  // nuSQUIDSDecoh
+  //
+
+  auto nusquids_liv_register = RegisterBasicNuSQuIDSPythonBindings<nuSQUIDSDecoh>("nuSQUIDSDecoh");
+
+  auto nusquids_liv_class_object = nusquids_liv_register.GetClassObject();
+  nusquids_liv_class_object->def("EnableDecoherence",&nuSQUIDSDecoh::EnableDecoherence);
+  nusquids_liv_class_object->def("Set_DecoherenceGammaMatrix",&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix);
+  nusquids_liv_class_object->def("Set_DecoherenceGammaMatrixDiagonal",&nuSQUIDSDecoh::Set_DecoherenceGammaMatrixDiagonal);
+  nusquids_liv_class_object->def("Get_DecoherenceGammaMatrix",&nuSQUIDSDecoh::Get_DecoherenceGammaMatrix);
+  nusquids_liv_class_object->def("Set_DecoherenceGammaEnergyDependence",&nuSQUIDSDecoh::Set_DecoherenceGammaEnergyDependence);
+  nusquids_liv_class_object->def("Get_DecoherenceGammaEnergyDependence",&nuSQUIDSDecoh::Get_DecoherenceGammaEnergyDependence);
+  nusquids_liv_class_object->def("Set_DecoherenceGammaEnergyScale",&nuSQUIDSDecoh::Set_DecoherenceGammaEnergyScale);
+  nusquids_liv_class_object->def("Get_DecoherenceGammaEnergyScale",&nuSQUIDSDecoh::Get_DecoherenceGammaEnergyScale);
+
+
+  //
+  // nuSQUIDSDecohAtm
+  //
+
+  //TODO using RegisterBasicAtmNuSQuIDSPythonBindings isn't working currently, builds but get run-time sisues with nuSQUIDSDecohAtm (lvalue) first arg of any function
+  //TODO resolve this properly, but for now just manually implementing Atm bindings
+  // auto nusquids_liv_atm_register = RegisterBasicAtmNuSQuIDSPythonBindings<nuSQUIDSDecoh>("nuSQUIDSDecohAtm");
+  // auto nusquids_liv_atm_class_object = nusquids_liv_atm_register.GetClassObject();
+  // nusquids_liv_atm_class_object->def("EnableDecoherence",&nuSQUIDSDecohAtm::EnableDecoherence);
+
+  class_<nuSQUIDSDecohAtm, boost::noncopyable, std::shared_ptr<nuSQUIDSDecohAtm> >("nuSQUIDSDecohAtm", no_init) //TODO This is the thing to remove once fix the issues using RegisterBasicAtmNuSQuIDSPythonBindings
+    .def(init<marray<double,1>,marray<double,1>,unsigned int,NeutrinoType>(args("CosZenith_vector","E_vector","numneu","NT")))
+    .def(init<marray<double,1>,marray<double,1>,unsigned int,NeutrinoType,bool>(args("CosZenith_vector","E_vector","numneu","NT","iinteraction")))
+    .def(init<marray<double,1>,marray<double,1>,unsigned int,NeutrinoType,bool,std::shared_ptr<CrossSectionLibrary>>(args("CosZenith_vector","E_vector","numneu","NT","iinteraction","ncs")))
+    .def(init<std::string>(args("filename")))
+    .def("EvolveState",&nuSQUIDSDecohAtm::EvolveState)
+    .def("Set_TauRegeneration",&nuSQUIDSDecohAtm::Set_TauRegeneration)
+    .def("EvalFlavor",(double(nuSQUIDSDecohAtm::*)(unsigned int,double,double,unsigned int,bool) const)&nuSQUIDSDecohAtm::EvalFlavor,
+        nuSQUIDSAtm_EvalFlavor_overload<nuSQUIDSDecohAtm>(args("Flavor","cos(theta)","Neutrino Energy","NeuType","BoolToRandomzeProdutionHeight"),
+          "nuSQuIDSAtm evaluate flux.."))
+    .def("Set_EvalThreads",&nuSQUIDSDecohAtm::Set_EvalThreads)
+    .def("Get_EvalThreads",&nuSQUIDSDecohAtm::Get_EvalThreads)
+    .def("Set_EarthModel",&nuSQUIDSDecohAtm::Set_EarthModel)
+    .def("WriteStateHDF5",&nuSQUIDSDecohAtm::WriteStateHDF5)
+    .def("ReadStateHDF5",&nuSQUIDSDecohAtm::ReadStateHDF5)
+    .def("Set_MixingAngle",&nuSQUIDSDecohAtm::Set_MixingAngle)
+    .def("Get_MixingAngle",&nuSQUIDSDecohAtm::Get_MixingAngle)
+    .def("Set_CPPhase",&nuSQUIDSDecohAtm::Set_CPPhase)
+    .def("Get_CPPhase",&nuSQUIDSDecohAtm::Get_CPPhase)
+    .def("Set_SquareMassDifference",&nuSQUIDSDecohAtm::Set_SquareMassDifference)
+    .def("Get_SquareMassDifference",&nuSQUIDSDecohAtm::Get_SquareMassDifference)
+    .def("Set_h",(void(nuSQUIDSDecohAtm::*)(double))&nuSQUIDSDecohAtm::Set_h)
+    .def("Set_h",(void(nuSQUIDSDecohAtm::*)(double,unsigned int))&nuSQUIDSDecohAtm::Set_h)
+    .def("Set_h_max",(void(nuSQUIDSDecohAtm::*)(double))&nuSQUIDSDecohAtm::Set_h_max)
+    .def("Set_h_max",(void(nuSQUIDSDecohAtm::*)(double,unsigned int))&nuSQUIDSDecohAtm::Set_h_max)
+    .def("Set_h_min",(void(nuSQUIDSDecohAtm::*)(double))&nuSQUIDSDecohAtm::Set_h_min)
+    .def("Set_h_min",(void(nuSQUIDSDecohAtm::*)(double,unsigned int))&nuSQUIDSDecohAtm::Set_h_min)
+    .def("Set_ProgressBar",&nuSQUIDSDecohAtm::Set_ProgressBar)
+    .def("Set_MixingParametersToDefault",&nuSQUIDSDecohAtm::Set_MixingParametersToDefault)
+    .def("Set_GSL_step",wrap_nusqatm_Set_GSL_STEP<nuSQUIDSDecoh>)
+    .def("Set_rel_error",(void(nuSQUIDSDecohAtm::*)(double))&nuSQUIDSDecohAtm::Set_rel_error)
+    .def("Set_rel_error",(void(nuSQUIDSDecohAtm::*)(double, unsigned int))&nuSQUIDSDecohAtm::Set_rel_error)
+    .def("Set_abs_error",(void(nuSQUIDSDecohAtm::*)(double))&nuSQUIDSDecohAtm::Set_abs_error)
+    .def("Set_abs_error",(void(nuSQUIDSDecohAtm::*)(double, unsigned int))&nuSQUIDSDecohAtm::Set_abs_error)
+    .def("Set_EvolLowPassCutoff",&nuSQUIDSDecohAtm::Set_EvolLowPassCutoff)
+    .def("Set_EvolLowPassScale",&nuSQUIDSDecohAtm::Set_EvolLowPassScale)
+    .def("GetNumE",&nuSQUIDSDecohAtm::GetNumE)
+    .def("GetNumCos",&nuSQUIDSDecohAtm::GetNumCos)
+    .def("GetNumNeu",&nuSQUIDSDecohAtm::GetNumNeu)
+    .def("GetNumRho",&nuSQUIDSDecohAtm::GetNumRho)
+    .def("GetnuSQuIDS",(std::vector<nuSQUIDSDecoh>&(nuSQUIDSDecohAtm::*)())&nuSQUIDSDecohAtm::GetnuSQuIDS,boost::python::return_internal_reference<>())
+    .def("GetnuSQuIDS",(nuSQUIDSDecoh&(nuSQUIDSDecohAtm::*)(unsigned int))&nuSQUIDSDecohAtm::GetnuSQuIDS,boost::python::return_internal_reference<>())
+    .def("Set_initial_state",(void(nuSQUIDSDecohAtm::*)(const marray<double,3>&, Basis))&nuSQUIDSDecohAtm::Set_initial_state,nuSQUIDSAtm_Set_initial_state<nuSQUIDSDecohAtm>())
+    .def("Set_initial_state",(void(nuSQUIDSDecohAtm::*)(const marray<double,4>&, Basis))&nuSQUIDSDecohAtm::Set_initial_state,nuSQUIDSAtm_Set_initial_state<nuSQUIDSDecohAtm>())
+    .def("GetStates", (marray<double,2>(nuSQUIDSDecohAtm::*)(unsigned int))&nuSQUIDSDecohAtm::GetStates,
+      nuSQUIDSAtm_GetStates_overload<nuSQUIDSDecohAtm>(args("rho"), "Get evolved states of all nodes"))
+    .def("GetERange",&nuSQUIDSDecohAtm::GetERange)
+    .def("GetCosthRange",&nuSQUIDSDecohAtm::GetCosthRange)
+    .def("Set_IncludeOscillations",&nuSQUIDSDecohAtm::Set_IncludeOscillations)
+    .def("Set_GlashowResonance",&nuSQUIDSDecohAtm::Set_GlashowResonance)
+    .def("Set_TauRegeneration",&nuSQUIDSDecohAtm::Set_TauRegeneration)
+    .def("Set_AllowConstantDensityOscillationOnlyEvolution",&nuSQUIDSDecohAtm::Set_AllowConstantDensityOscillationOnlyEvolution)
+    .def("Set_PositivyConstrain",&nuSQUIDSDecohAtm::Set_PositivityConstrain)
+    .def("Set_PositivyConstrainStep",&nuSQUIDSDecohAtm::Set_PositivityConstrainStep)
+    .def("Get_EvalThreads",&nuSQUIDSDecohAtm::Get_EvalThreads)
+    .def("Set_EvalThreads",&nuSQUIDSDecohAtm::Set_EvalThreads)
+    .def("Set_EarthModel",&nuSQUIDSDecohAtm::Set_EarthModel)
+    .def("Set_Body",&nuSQUIDSDecohAtm::Set_Body, bp::arg("Body"))
+    .def("SetNeutrinoCrossSections",&nuSQUIDSDecohAtm::SetNeutrinoCrossSections)
+    .def("GetNeutrinoCrossSections",&nuSQUIDSDecohAtm::GetNeutrinoCrossSections)
+    .def("EnableDecoherence",&nuSQUIDSDecohAtm::EnableDecoherence)
+    .def("Set_DecoherenceGammaMatrix",&nuSQUIDSDecohAtm::Set_DecoherenceGammaMatrix)
+    .def("Set_DecoherenceGammaMatrixDiagonal",&nuSQUIDSDecohAtm::Set_DecoherenceGammaMatrixDiagonal)
+    .def("Get_DecoherenceGammaMatrix",&nuSQUIDSDecohAtm::Get_DecoherenceGammaMatrix)
+    .def("Set_DecoherenceGammaEnergyDependence",&nuSQUIDSDecohAtm::Set_DecoherenceGammaEnergyDependence)
+    .def("Get_DecoherenceGammaEnergyDependence",&nuSQUIDSDecohAtm::Get_DecoherenceGammaEnergyDependence)
+    .def("Set_DecoherenceGammaEnergyScale",&nuSQUIDSDecohAtm::Set_DecoherenceGammaEnergyScale)
+    .def("Get_DecoherenceGammaEnergyScale",&nuSQUIDSDecohAtm::Get_DecoherenceGammaEnergyScale)
+  ;
+
+} // end BOOST_PYTHON_MODULE
