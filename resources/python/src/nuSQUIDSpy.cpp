@@ -420,13 +420,14 @@ BOOST_PYTHON_MODULE(nuSQuIDS)
 
   auto nusquids_liv_class_object = nusquids_liv_register.GetClassObject();
   nusquids_liv_class_object->def("EnableDecoherence",&nuSQUIDSDecoh::EnableDecoherence);
-  nusquids_liv_class_object->def("Set_DecoherenceGammaMatrix",&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix);
-  nusquids_liv_class_object->def("Set_DecoherenceGammaMatrixDiagonal",&nuSQUIDSDecoh::Set_DecoherenceGammaMatrixDiagonal);
+  nusquids_liv_class_object->def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecoh::*)(const marray<double,2>&))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrix);
+  nusquids_liv_class_object->def("Set_DecoherenceGammaMatrixDiagonal",(void(nuSQUIDSDecoh::*)(const marray<double,1>&))&nuSQUIDSDecoh::Set_DecoherenceGammaMatrixDiagonal);
   nusquids_liv_class_object->def("Get_DecoherenceGammaMatrix",&nuSQUIDSDecoh::Get_DecoherenceGammaMatrix);
   nusquids_liv_class_object->def("Set_DecoherenceGammaEnergyDependence",&nuSQUIDSDecoh::Set_DecoherenceGammaEnergyDependence);
   nusquids_liv_class_object->def("Get_DecoherenceGammaEnergyDependence",&nuSQUIDSDecoh::Get_DecoherenceGammaEnergyDependence);
   nusquids_liv_class_object->def("Set_DecoherenceGammaEnergyScale",&nuSQUIDSDecoh::Set_DecoherenceGammaEnergyScale);
   nusquids_liv_class_object->def("Get_DecoherenceGammaEnergyScale",&nuSQUIDSDecoh::Get_DecoherenceGammaEnergyScale);
+
 
 
   //
@@ -500,8 +501,8 @@ BOOST_PYTHON_MODULE(nuSQuIDS)
     .def("SetNeutrinoCrossSections",&nuSQUIDSDecohAtm::SetNeutrinoCrossSections)
     .def("GetNeutrinoCrossSections",&nuSQUIDSDecohAtm::GetNeutrinoCrossSections)
     .def("EnableDecoherence",&nuSQUIDSDecohAtm::EnableDecoherence)
-    .def("Set_DecoherenceGammaMatrix",&nuSQUIDSDecohAtm::Set_DecoherenceGammaMatrix)
-    .def("Set_DecoherenceGammaMatrixDiagonal",&nuSQUIDSDecohAtm::Set_DecoherenceGammaMatrixDiagonal)
+    .def("Set_DecoherenceGammaMatrix",(void(nuSQUIDSDecohAtm::*)(const marray<double,2>&))&nuSQUIDSDecohAtm::Set_DecoherenceGammaMatrix)
+    .def("Set_DecoherenceGammaMatrixDiagonal",(void(nuSQUIDSDecohAtm::*)(const marray<double,1>&))&nuSQUIDSDecohAtm::Set_DecoherenceGammaMatrixDiagonal)
     .def("Get_DecoherenceGammaMatrix",&nuSQUIDSDecohAtm::Get_DecoherenceGammaMatrix)
     .def("Set_DecoherenceGammaEnergyDependence",&nuSQUIDSDecohAtm::Set_DecoherenceGammaEnergyDependence)
     .def("Get_DecoherenceGammaEnergyDependence",&nuSQUIDSDecohAtm::Get_DecoherenceGammaEnergyDependence)
