@@ -1,16 +1,23 @@
 nuSQuIDS BSM implementations
 ============================
 
-This fork of nuSQuIDS implements BSM neutrino oscillation/propagation scenarios, and is developed by Tom Stuttard (thomas.stuttard@nbi.ku.dk).
-
-It is built, installed, etc in the same way as conventional nuSQuIDS, whose documentation can be found [below](#nusquids-documentation).
+This fork/branch of nuSQuIDS (`bsm`) implements BSM neutrino oscillation/propagation scenarios, and is developed by Tom Stuttard (thomas.stuttard@nbi.ku.dk).
 
 The following subsections list the BSM models implemented so far. All include pybindings and associated atmospheric neutrino wrapper classes.
 
 Note that these models are included in a BSM oscillation wrapper class in the [DEIMOS](https://github.com/ts4051/deimos) software package, which unifies a number of oscillation solvers.
 
+
+Installation
+------------
+
+This fork is built, installed, etc in the same way as conventional nuSQuIDS, whose documentation can be found [below](#nusquids-documentation). 
+
+**IMPORTANT:** This requires a corresponding fork on the SQuIDS project (`bsm` branch) - see [here](https://github.com/ts4051/SQuIDS/tree/bsm). This has a small modification to include a Lindblad term required for the neutrino decoherence model. 
+
+
 Decoherence
--------------
+-----------
 
 An implementation of neutrino decoherence, using Lindland master equation representing neutrino propagation as an open quantum system. The formalism implemented is described in [arxiv:2007.00068](https://arxiv.org/abs/2007.00068). 
 
