@@ -7,6 +7,8 @@ It is built, installed, etc in the same way as conventional nuSQuIDS, whose docu
 
 The following subsections list the BSM models implemented so far. All include pybindings and associated atmospheric neutrino wrapper classes.
 
+Note that these models are included in a BSM oscillation wrapper class in the [DEIMOS](https://github.com/ts4051/deimos) software package, which unifies a number of oscillation solvers.
+
 Decoherence
 -------------
 
@@ -21,6 +23,7 @@ The decoherence model is implemented in `nuSQuIDSDecoh(Atm)` classes. The user i
 Notes:
 * Any form for the 9x9 $D$ matrix can be specified in this implementation, not just the three (diagonal) scenarios focussed on in arxiv:2007.00068
 * If one is using a diagonal $D$ matrix, can instead use `Set_DecoherenceGammaMatrixDiagonal(D)` for simplicity, providing a 1D array of the 9 diagonal elements
+* Depending on the assumptions made, the elements of the $D$ matrix are not fully independent, and inequalities between them must be observed. These are not enforced in the model, the user is responsible for this (since it depends on their chosen assumptions)
 * In high energy atmospheric/astrophysical neutrino scenarios, it is important to enable tau-renegeration in nuSQuIDs, as this effect may be enhanced by decoherence (since decoherence can increase the nutau flux, especially for numu dominated initital fluxes)
 
 Publications using this model:
