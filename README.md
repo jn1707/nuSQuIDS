@@ -28,6 +28,7 @@ The decoherence model is implemented in `nuSQuIDSDecoh(Atm)` classes. The user i
 * `Set_DecoherenceGammaMatrix(D)` - sets the 9x9 $D$ matrix, should be a numpy array when using pyindings ($D$ in equation 10, arxiv:2007.00068)
 
 **Notes:**
+* A number of publications consider only a 8x8 $D$ matrix. This can also be represented by this code, simply make sure all elements of the 0'th row/column are 0.
 * Any form for the 9x9 $D$ matrix can be specified in this implementation, not just the three (diagonal) scenarios focussed on in arxiv:2007.00068
 * If one is using a diagonal $D$ matrix, can instead use `Set_DecoherenceGammaMatrixDiagonal(D)` for simplicity, providing a 1D array of the 9 diagonal elements
 * Depending on the assumptions made, the elements of the $D$ matrix are not fully independent, and inequalities between them must be observed. These are not enforced in the model, the user is responsible for this (since it depends on their chosen assumptions)
