@@ -5,7 +5,7 @@ This fork/branch of nuSQuIDS (`bsm`) implements BSM neutrino oscillation/propaga
 
 The following subsections list the BSM models implemented so far. All include pybindings and associated atmospheric neutrino wrapper classes.
 
-Note that these models are included in a BSM oscillation wrapper class in the [DEIMOS](https://github.com/ts4051/deimos) software package, which unifies a number of oscillation solvers.
+Note that these models are included in a BSM oscillation wrapper class in the [DEIMOS](https://github.com/ts4051/deimos) software package, which unifies a number of oscillation solvers. The use of this is not required however.
 
 
 Installation
