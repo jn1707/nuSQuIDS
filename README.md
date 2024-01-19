@@ -37,6 +37,7 @@ The decoherence model is implemented in `nuSQuIDSDecoh(Atm)` classes. The user i
 **Example:**
 
 An [example python script](https://github.com/ts4051/nuSQuIDS/blob/bsm/resources/python/example/nusquids_decoherence_example.py) is provided giving an basic example of configuring the decoherence model and plotting the resulting oscillation proabilities (displaying damping effects characteristic of decoherence). The script produces the following figure:
+
 ![decoherence](https://github.com/ts4051/nuSQuIDS/assets/5854331/5f475a0b-d5db-45d2-9e45-811ec90667f8)
 
 **Publications using this model:**
