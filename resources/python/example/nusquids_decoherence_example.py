@@ -7,7 +7,7 @@ Tom Stuttard
 '''
 
 import matplotlib
-matplotlib.use('AGG') # Might need this depending on your installation (some matplotlib installation hang without this)
+# matplotlib.use('AGG') # Might need this depending on your installation (some matplotlib installation hang without this)
 import matplotlib.pyplot as plt
 
 import numpy as np
