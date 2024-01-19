@@ -98,36 +98,3 @@ fig.tight_layout()
 fig_path = "decoherence.png"
 fig.savefig(fig_path)
 print(f"\nSaved : {fig_path}")
-
-
-
-
-
-# nusquids.Set_ProgressBar(False)
-
-
-# #nusquids.Set_CPPhase( 0, 2, np.pi)
-
-
-# #print "nuSQuIDS PMNS:"
-# #nusquids.PrintTransformationMatrix()
-
-# # Function for calculating nuSQuIDS osc probs 
-# def get_nusq_osc_probs() :
-#     prob = np.full( (len(L_km),len(flavs)), np.NaN )
-#     for i_L,L in enumerate(L_km) :
-# #        track = nsq.Vacuum.Track(L*units.km) if V is None else nsq.ConstantDensity.Track(L*units.km)
-#         track = nsq.Vacuum.Track(L*units.km) if V is None else nsq.VariableDensity.Track(L*units.km)
-#         nusquids.Set_Track(track)
-#         nusquids.Set_initial_state( np.array([0.,1.,0.]), nsq.Basis.flavor ) # Start with a pure numu flux
-#         nusquids.EvolveState()
-#             prob[i_L,i_ff] = nusquids.EvalFlavor( flav, E_GeV*units.GeV, 0 ) if use_energy_nodes else nusquids.EvalFlavor( flav )
-#     return prob
-
-# if include_std_osc :
-#     nusquids.Set_DecoherenceGammaMatrix( 0., 0., 0. )
-#     std_osc_probs_nsq = get_nusq_osc_probs()
-
-# if include_decoherence : 
-#     nusquids.Set_DecoherenceGammaMatrix( gamma_eV[0], gamma_eV[1], gamma_eV[2] )
-#     decoh_osc_probs_nsq = get_nusq_osc_probs()
