@@ -13,7 +13,7 @@ Installation
 
 This fork is built, installed, etc in the same way as conventional nuSQuIDS, whose documentation can be found [below](#nusquids-documentation). 
 
-**IMPORTANT:** This requires a corresponding fork on the SQuIDS project (`bsm` branch) - see [here](https://github.com/ts4051/SQuIDS/tree/bsm). This has a small modification to include a Lindblad term required for the neutrino decoherence model. 
+**IMPORTANT:** This requires a corresponding fork of the SQuIDS project (`bsm` branch) - see [here](https://github.com/ts4051/SQuIDS/tree/bsm). This has a small modification to include a Lindblad term required for the neutrino decoherence model. 
 
 
 Decoherence
@@ -27,17 +27,22 @@ The decoherence model is implemented in `nuSQuIDSDecoh(Atm)` classes. The user i
 * `Set_DecoherenceGammaEnergyScale(E0)` - sets the reference energy for the energy-dependence ($E_0$ in equation 18, arxiv:2007.00068)
 * `Set_DecoherenceGammaMatrix(D)` - sets the 9x9 $D$ matrix, should be a numpy array when using pyindings ($D$ in equation 10, arxiv:2007.00068)
 
-Notes:
+**Notes:**
 * Any form for the 9x9 $D$ matrix can be specified in this implementation, not just the three (diagonal) scenarios focussed on in arxiv:2007.00068
 * If one is using a diagonal $D$ matrix, can instead use `Set_DecoherenceGammaMatrixDiagonal(D)` for simplicity, providing a 1D array of the 9 diagonal elements
 * Depending on the assumptions made, the elements of the $D$ matrix are not fully independent, and inequalities between them must be observed. These are not enforced in the model, the user is responsible for this (since it depends on their chosen assumptions)
 * In high energy atmospheric/astrophysical neutrino scenarios, it is important to enable tau-renegeration in nuSQuIDs, as this effect may be enhanced by decoherence (since decoherence can increase the nutau flux, especially for numu dominated initital fluxes)
 
-Publications using this model:
+**Example:**
+
+An [example python script](https://github.com/ts4051/nuSQuIDS/blob/bsm/resources/python/example/nusquids_decoherence_example.py) is provided giving an basic example of configuring the decoherence model and plotting the resulting oscillation proabilities (displaying damping effects characteristic of decoherence). The script produces the following figure:
+![decoherence](https://github.com/ts4051/nuSQuIDS/assets/5854331/5f475a0b-d5db-45d2-9e45-811ec90667f8)
+
+**Publications using this model:**
 * _Neutrino decoherence from quantum gravitational stochastic perturbations_ - [arxiv:2007.00068](https://arxiv.org/abs/2007.00068)
 * _Searching for Decoherence from Quantum Gravity at the IceCube South Pole Neutrino Observatory_ - [arxiv:2308.00105](https://arxiv.org/abs/2308.00105)
 
-Contributors:
+**Contributors:**
 * Tom Stuttard
 * Mikkel Jensen
 * Martin Langgaard Ravn
@@ -52,8 +57,10 @@ Coming soon...
 
 
 ---
+---
+---
 
-_This following documentation is for the standard nuSQuIDS package, but applies to this fork however._
+_This following documentation is for the standard nuSQuIDS package, and also applies to this fork._
 
 nuSQuIDS documentation
 ======================
