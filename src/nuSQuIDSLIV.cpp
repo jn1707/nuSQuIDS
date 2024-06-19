@@ -1,159 +1,182 @@
 #include <math.h>
 #include <nuSQuIDS/nuSQuIDSLIV.h>
 
-namespace nusquids{
+namespace nusquids {
 
 void nuSQUIDSLIV::AddToPreDerive(double x) {
+    for (unsigned int ei = 0; ei < ne; ei++) {
+        squids::SU_vector h0 = H0(E_range[ei], 0);
 
-    for(unsigned int ei = 0; ei < ne; ei++){
-
-        // asumming same mass hamiltonian for neutrinos/antineutrinos
-        squids::SU_vector h0 = H0( E_range[ei], 0 );
-
-        LIVP_Eindep_evol[ei] = LIVP_Eindep.Evolve( h0, (x-Get_t_initial()) );
-        LIVP_Edep_evol[ei] = LIVP_Edep.Evolve( h0, (x-Get_t_initial()) );
-
+        CPT_odd_Eindep_evol[ei] = CPT_odd_Eindep.Evolve(h0, (x - Get_t_initial()));
+        CPT_odd_Edep_evol[ei] = CPT_odd_Edep.Evolve(h0, (x - Get_t_initial()));
+        CPT_even_Eindep_evol[ei] = CPT_even_Eindep.Evolve(h0, (x - Get_t_initial()));
+        CPT_even_Edep_evol[ei] = CPT_even_Edep.Evolve(h0, (x - Get_t_initial()));
     }
-
 }
 
-
 squids::SU_vector nuSQUIDSLIV::HI(unsigned int ie, unsigned int irho) const {
-
-    // Get the standard time-dependent Hamilonian
     squids::SU_vector potential = nuSQUIDS::HI(ie, irho);
 
-    // Add SME effective Hamiltonian term
     double sign = 1;
-    // if (NT==antineutrino){                                      // maybe add (irho == 1 and NT==both)   //TODO Implement this?
-    //     // antineutrino matter potential flips sign
-    //     sign*=(-1);
-    potential += sign * ( E_range[ie] * LIVP_Edep_evol[ie] + LIVP_Eindep_evol[ie]);
+    if ((irho == 1 and NT == both) or NT == antineutrino) {
+        sign *= -1;
+    }
+
+    // Add SME Hamiltonian term
+    potential += sign * (CPT_odd_Eindep_evol[ie] + E_range[ie] * CPT_odd_Edep_evol[ie]) + 
+                 (CPT_even_Eindep_evol[ie] + E_range[ie] * CPT_even_Edep_evol[ie]);
 
     return potential;
 }
 
-
 void nuSQUIDSLIV::init() {
+    CPT_odd_Eindep_evol.resize(ne);
+    CPT_odd_Edep_evol.resize(ne);
+    CPT_even_Eindep_evol.resize(ne);
+    CPT_even_Edep_evol.resize(ne);
 
-    // Allocate some matrices
-    LIVP_Eindep_evol.resize(ne);
-    LIVP_Edep_evol.resize(ne);
-
-    for(unsigned int ei = 0; ei < ne; ei++){
-        LIVP_Eindep_evol[ei] = squids::SU_vector(nsun);
-        LIVP_Edep_evol[ei] = squids::SU_vector(nsun);
+    for (unsigned int ei = 0; ei < ne; ei++) {
+        CPT_odd_Eindep_evol[ei] = squids::SU_vector(nsun);
+        CPT_odd_Edep_evol[ei] = squids::SU_vector(nsun);
+        CPT_even_Eindep_evol[ei] = squids::SU_vector(nsun);
+        CPT_even_Edep_evol[ei] = squids::SU_vector(nsun);
     }
-
 }
 
-
-void nuSQUIDSLIV::Set_LIVCoefficient(const marray<double,3>& a_mat,const marray<double,3>& c_mat,  double ra_rad, double dec_rad){
-
-    // 
-    // Assign LIV parameters:
-    //
-
-    // dmat is a 3D array of shape (3,3,3) containing a 3x3 matrix for each direction (x,y,z)
-    // loop over directions and assign matrices to gsl matrices
-
+void nuSQUIDSLIV::Set_LIVCoefficient(const marray<double, 4>& a_mat, const marray<double, 4>& c_mat, double ra_rad, double dec_rad) {
+    gsl_matrix_complex* a_eV_t0 = gsl_matrix_complex_calloc(3, 3);
     gsl_matrix_complex* a_eV_x = gsl_matrix_complex_calloc(3, 3);
     gsl_matrix_complex* a_eV_y = gsl_matrix_complex_calloc(3, 3);
     gsl_matrix_complex* a_eV_z = gsl_matrix_complex_calloc(3, 3);
 
+    gsl_matrix_complex* c_tt = gsl_matrix_complex_calloc(3, 3);
     gsl_matrix_complex* c_tx = gsl_matrix_complex_calloc(3, 3);
     gsl_matrix_complex* c_ty = gsl_matrix_complex_calloc(3, 3);
     gsl_matrix_complex* c_tz = gsl_matrix_complex_calloc(3, 3);
-
+    gsl_matrix_complex* c_xx = gsl_matrix_complex_calloc(3, 3);
+    gsl_matrix_complex* c_xy = gsl_matrix_complex_calloc(3, 3);
+    gsl_matrix_complex* c_xz = gsl_matrix_complex_calloc(3, 3);
+    gsl_matrix_complex* c_yy = gsl_matrix_complex_calloc(3, 3);
+    gsl_matrix_complex* c_yz = gsl_matrix_complex_calloc(3, 3);
+    gsl_matrix_complex* c_zz = gsl_matrix_complex_calloc(3, 3);
 
     for (size_t i = 0; i < 3; i++) {
         for (size_t j = 0; j < 3; j++) {
-            gsl_matrix_complex_set(a_eV_x, i, j, gsl_complex_rect(a_mat[0][i][j], 0));
-            gsl_matrix_complex_set(a_eV_y, i, j, gsl_complex_rect(a_mat[1][i][j], 0));
-            gsl_matrix_complex_set(a_eV_z, i, j, gsl_complex_rect(a_mat[2][i][j], 0));
-            gsl_matrix_complex_set(c_tx, i, j, gsl_complex_rect(c_mat[0][i][j], 0));
-            gsl_matrix_complex_set(c_ty, i, j, gsl_complex_rect(c_mat[1][i][j], 0));
-            gsl_matrix_complex_set(c_tz, i, j, gsl_complex_rect(c_mat[2][i][j], 0));
+            gsl_matrix_complex_set(a_eV_t0, i, j, gsl_complex_rect(a_mat[0][i][j], 0));
+            gsl_matrix_complex_set(a_eV_x, i, j, gsl_complex_rect(a_mat[1][i][j], 0));
+            gsl_matrix_complex_set(a_eV_y, i, j, gsl_complex_rect(a_mat[2][i][j], 0));
+            gsl_matrix_complex_set(a_eV_z, i, j, gsl_complex_rect(a_mat[3][i][j], 0));
+
+            gsl_matrix_complex_set(c_tt, i, j, gsl_complex_rect(c_mat[0][0][i][j], 0));
+            gsl_matrix_complex_set(c_tx, i, j, gsl_complex_rect(c_mat[0][1][i][j], 0));
+            gsl_matrix_complex_set(c_ty, i, j, gsl_complex_rect(c_mat[0][2][i][j], 0));
+            gsl_matrix_complex_set(c_tz, i, j, gsl_complex_rect(c_mat[0][3][i][j], 0));
+            gsl_matrix_complex_set(c_xx, i, j, gsl_complex_rect(c_mat[1][1][i][j], 0));
+            gsl_matrix_complex_set(c_xy, i, j, gsl_complex_rect(c_mat[1][2][i][j], 0));
+            gsl_matrix_complex_set(c_xz, i, j, gsl_complex_rect(c_mat[1][3][i][j], 0));
+            gsl_matrix_complex_set(c_yy, i, j, gsl_complex_rect(c_mat[2][2][i][j], 0));
+            gsl_matrix_complex_set(c_yz, i, j, gsl_complex_rect(c_mat[2][3][i][j], 0));
+            gsl_matrix_complex_set(c_zz, i, j, gsl_complex_rect(c_mat[3][3][i][j], 0));
         }
     }
 
-
-    //
-    // Define Coordinate system
-    //
-
-    // celestial colatitude and longitude
-    double theta = M_PI/2 + dec_rad;
+    double theta = M_PI / 2 - dec_rad;
     double phi = ra_rad;
+    double p_x = -sin(theta) * cos(phi);
+    double p_y = -sin(theta) * sin(phi);
+    double p_z = -cos(theta);
 
-    // r vector
-    double NX = sin(theta) * cos(phi);
-    double NY = sin(theta) * sin(phi);
-    double NZ = - cos(theta);
+    gsl_matrix_complex* CPT_odd_Eindep_GSL = gsl_matrix_complex_calloc(3, 3);
+    gsl_matrix_complex* CPT_odd_Edep_GSL = gsl_matrix_complex_calloc(3, 3);
+    gsl_matrix_complex* CPT_even_Eindep_GSL = gsl_matrix_complex_calloc(3, 3);
+    gsl_matrix_complex* CPT_even_Edep_GSL = gsl_matrix_complex_calloc(3, 3);
 
+    // CPT-odd energy-independent part
+    gsl_matrix_complex* a_term = gsl_matrix_complex_calloc(3, 3);
 
+    gsl_matrix_complex_memcpy(a_term, a_eV_t0);
+    gsl_matrix_complex_add(CPT_odd_Eindep_GSL, a_term);
 
-    //
-    // Calculate LIV effective Hamiltonian with GSL matrix operations
-    //
+    gsl_matrix_complex_memcpy(a_term, a_eV_x);
+    gsl_matrix_complex_scale(a_term, gsl_complex_rect(-p_x, 0));
+    gsl_matrix_complex_add(CPT_odd_Eindep_GSL, a_term);
 
-    // Amplitude equations: (cos(omega_sid L) amplitudes)
-    // Ac0 = -NX * ax - NY * ay; 
-    // Ac1 = 2 * NX * cxt + 2 * NY * cyt;
-    // Const = NZ * az;
+    gsl_matrix_complex_memcpy(a_term, a_eV_y);
+    gsl_matrix_complex_scale(a_term, gsl_complex_rect(-p_y, 0));
+    gsl_matrix_complex_add(CPT_odd_Eindep_GSL, a_term);
 
-    // Declare Ac0, Ac1, and Const matrices
-    gsl_matrix_complex* Ac0 = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* Ac1 = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* Const = gsl_matrix_complex_calloc(3, 3);
+    gsl_matrix_complex_memcpy(a_term, a_eV_z);
+    gsl_matrix_complex_scale(a_term, gsl_complex_rect(-p_z, 0));
+    gsl_matrix_complex_add(CPT_odd_Eindep_GSL, a_term);
 
-    // Calculate Ac0, Ac1, and Const matrices
-    gsl_matrix_complex_scale(a_eV_x, gsl_complex_rect(-NX, 0));
-    gsl_matrix_complex_scale(a_eV_y, gsl_complex_rect(-NY, 0));
-    gsl_matrix_complex_memcpy(Ac0, a_eV_x);
-    gsl_matrix_complex_add(Ac0, a_eV_y);
+    // CPT-even energy-dependent part
+    gsl_matrix_complex* cterm = gsl_matrix_complex_calloc(3, 3);
 
-    gsl_matrix_complex_scale(c_tx, gsl_complex_rect(2 * NX, 0));
-    gsl_matrix_complex_scale(c_ty, gsl_complex_rect(2 * NY, 0));
-    gsl_matrix_complex_memcpy(Ac1, c_tx);
-    gsl_matrix_complex_add(Ac1, c_ty);
+    gsl_matrix_complex_memcpy(cterm, c_tt);
+    gsl_matrix_complex_scale(cterm, gsl_complex_rect(0.5 * (3 - p_z * p_z), 0));
+    gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
 
-    gsl_matrix_complex_memcpy(Const, a_eV_z);
-    gsl_matrix_complex_scale(Const, gsl_complex_rect(NZ, 0));
+    gsl_matrix_complex_memcpy(cterm, c_zz);
+    gsl_matrix_complex_scale(cterm, gsl_complex_rect(0.5 * (-1 + 3 * p_z * p_z), 0));
+    gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
 
-    // Declare LIVP_Edep and LIVP_Eindep matrices
-    gsl_matrix_complex* LIVP_Edep_GSL = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* LIVP_Eindep_GSL = gsl_matrix_complex_calloc(3, 3);
+    gsl_matrix_complex_memcpy(cterm, c_tx);
+    gsl_matrix_complex_scale(term4, gsl_complex_rect(2 * p_x, 0));
+    gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
 
-    // Calculate LIVP_Edep matrix
-    gsl_matrix_complex_memcpy(LIVP_Edep_GSL, Ac1);
+    gsl_matrix_complex_memcpy(cterm, c_ty);
+    gsl_matrix_complex_scale(term5, gsl_complex_rect(2 * p_y, 0));
+    gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
+    
+    gsl_matrix_complex_memcpy(cterm, c_tz);
+    gsl_matrix_complex_scale(cterm, gsl_complex_rect(-2 * p_z, 0));
+    gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
 
-    // Calculate LIVP_Eindep matrix
-    gsl_matrix_complex_memcpy(LIVP_Eindep_GSL, Ac0);
-    gsl_matrix_complex_add(LIVP_Eindep_GSL, Const);
+    gsl_matrix_complex_memcpy(cterm, c_xx);
+    gsl_matrix_complex_scale(cterm, gsl_complex_rect(-p_x * p_x, 0));
+    gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
 
-    // Heff =  Ac0 + Const + E * Ac1 = LIVP_Eindep + E * LIVP_Edep (see HI function above)
-    LIVP_Edep = squids::SU_vector(LIVP_Edep_GSL);           // E dependent part of LIVP 
-    LIVP_Eindep = squids::SU_vector(LIVP_Eindep_GSL);   // E independent part of LIVP
+    gsl_matrix_complex_memcpy(cterm, c_xy);
+    gsl_matrix_complex_scale(cterm, gsl_complex_rect(-2 * p_x * p_y, 0));
+    gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
 
+    gsl_matrix_complex_memcpy(cterm, c_xz);
+    gsl_matrix_complex_scale(cterm, gsl_complex_rect(-2 * p_x * p_z, 0));
+    gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
 
-    //
-    // Done
-    //
+    gsl_matrix_complex_memcpy(cterm, c_yy);
+    gsl_matrix_complex_scale(cterm, gsl_complex_rect(-p_y * p_y, 0));
+    gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
 
-    // free allocated matrix
+    gsl_matrix_complex_memcpy(cterm, c_yz);
+    gsl_matrix_complex_scale(cterm, gsl_complex_rect(-2 * p_y * p_z, 0));
+    gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
+
+    CPT_even_Edep = squids::SU_vector(<CPT_even_Edep_GSL>);
+    CPT_even_Eindep = squids::SU_vector(<CPT_even_Eindep_GSL>);
+    CPT_odd_Eindep = squids::SU_vector(<CPT_odd_Eindep_GSL>);
+    CPT_odd_Edep = squids::SU_vector(<CPT_odd_Edep_GSL>);
+
+    gsl_matrix_complex_free(a_eV_t0);
     gsl_matrix_complex_free(a_eV_x);
     gsl_matrix_complex_free(a_eV_y);
     gsl_matrix_complex_free(a_eV_z);
+    gsl_matrix_complex_free(c_tt);
     gsl_matrix_complex_free(c_tx);
     gsl_matrix_complex_free(c_ty);
     gsl_matrix_complex_free(c_tz);
-    gsl_matrix_complex_free(Ac0);
-    gsl_matrix_complex_free(Ac1);
-    gsl_matrix_complex_free(Const);
-    gsl_matrix_complex_free(LIVP_Edep_GSL);
-    gsl_matrix_complex_free(LIVP_Eindep_GSL);
-
+    gsl_matrix_complex_free(c_xx);
+    gsl_matrix_complex_free(c_xy);
+    gsl_matrix_complex_free(c_xz);
+    gsl_matrix_complex_free(c_yy);
+    gsl_matrix_complex_free(c_yz);
+    gsl_matrix_complex_free(c_zz);
+    gsl_matrix_complex_free(a_term);
+    gsl_matrix_complex_free(cterm);
+    gsl_matrix_complex_free(CPT_odd_Eindep_GSL);
+    gsl_matrix_complex_free(CPT_odd_Edep_GSL);
+    gsl_matrix_complex_free(CPT_even_Eindep_GSL);
+    gsl_matrix_complex_free(CPT_even_Edep_GSL);
 }
 
-} // close namespace
+}  // close namespace

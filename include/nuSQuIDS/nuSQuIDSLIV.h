@@ -26,10 +26,17 @@ class nuSQUIDSLIV: public nuSQUIDS {
 
   private:
 
-    squids::SU_vector LIVP_Eindep;
-    std::vector<squids::SU_vector> LIVP_Eindep_evol;
-    squids::SU_vector LIVP_Edep;
-    std::vector<squids::SU_vector> LIVP_Edep_evol;
+    squids::SU_vector CPT_odd_Eindep_evol;
+    std::vector<squids::SU_vector> CPT_odd_Eindep_evol;
+
+    squids::SU_vector CPT_odd_Edep_evol;
+    std::vector<squids::SU_vector> CPT_odd_Edep_evol;
+
+    squids::SU_vector CPT_even_Eindep_evol;
+    std::vector<squids::SU_vector> CPT_even_Eindep_evol;
+
+    squids::SU_vector CPT_even_Edep_evol;
+    std::vector<squids::SU_vector> CPT_even_Edep_evol;
 
     // Override nuSQuIDS functions to add SME terms
     void AddToPreDerive(double x);
