@@ -23,8 +23,8 @@ squids::SU_vector nuSQUIDSLIV::HI(unsigned int ie, unsigned int irho) const {
     }
 
     // Add SME Hamiltonian term
-    potential += sign * (CPT_odd_Eindep_evol[ie] + E_range[ie] * CPT_odd_Edep_evol[ie]) + 
-                 (CPT_even_Eindep_evol[ie] + E_range[ie] * CPT_even_Edep_evol[ie]);
+    potential += sign * ( E_range[ie] * CPT_odd_Edep_evol[ie] + CPT_odd_Eindep_evol[ie] ); // CPT odd
+    potential += (E_range[ie] * CPT_even_Edep_evol[ie] + CPT_even_Eindep_evol[ie]); // CPT even
 
     return potential;
 }
@@ -43,26 +43,31 @@ void nuSQUIDSLIV::init() {
     }
 }
 
-void nuSQUIDSLIV::Set_LIVCoefficient(const marray<double, 4>& a_mat, const marray<double, 4>& c_mat, double ra_rad, double dec_rad) {
-    gsl_matrix_complex* a_eV_t0 = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* a_eV_x = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* a_eV_y = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* a_eV_z = gsl_matrix_complex_calloc(3, 3);
+void nuSQUIDSLIV::Set_LIVCoefficient(const marray<double, 3>& a_mat, const marray<double, 4>& c_mat, double ra_rad, double dec_rad) {
 
-    gsl_matrix_complex* c_tt = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* c_tx = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* c_ty = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* c_tz = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* c_xx = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* c_xy = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* c_xz = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* c_yy = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* c_yz = gsl_matrix_complex_calloc(3, 3);
-    gsl_matrix_complex* c_zz = gsl_matrix_complex_calloc(3, 3);
+    // Init "a" matrix (N,N) per element
+    gsl_matrix_complex* a_eV_t0 = gsl_matrix_complex_calloc(nsun, nsun);
+    gsl_matrix_complex* a_eV_x = gsl_matrix_complex_calloc(nsun, nsun);
+    gsl_matrix_complex* a_eV_y = gsl_matrix_complex_calloc(nsun, nsun);
+    gsl_matrix_complex* a_eV_z = gsl_matrix_complex_calloc(nsun, nsun);
 
-    for (size_t i = 0; i < 3; i++) {
-        for (size_t j = 0; j < 3; j++) {
-            gsl_matrix_complex_set(a_eV_t0, i, j, gsl_complex_rect(a_mat[0][i][j], 0));
+    // Init "a" matrix (N,N) per element
+    gsl_matrix_complex* c_tt = gsl_matrix_complex_calloc(nsun, nsun);
+    gsl_matrix_complex* c_tx = gsl_matrix_complex_calloc(nsun, nsun);
+    gsl_matrix_complex* c_ty = gsl_matrix_complex_calloc(nsun, nsun);
+    gsl_matrix_complex* c_tz = gsl_matrix_complex_calloc(nsun, nsun);
+    gsl_matrix_complex* c_xx = gsl_matrix_complex_calloc(nsun, nsun);
+    gsl_matrix_complex* c_xy = gsl_matrix_complex_calloc(nsun, nsun);
+    gsl_matrix_complex* c_xz = gsl_matrix_complex_calloc(nsun, nsun);
+    gsl_matrix_complex* c_yy = gsl_matrix_complex_calloc(nsun, nsun);
+    gsl_matrix_complex* c_yz = gsl_matrix_complex_calloc(nsun, nsun);
+    gsl_matrix_complex* c_zz = gsl_matrix_complex_calloc(nsun, nsun);
+
+    // Set matrix elements based on the inputs
+    for (size_t i = 0; i < nsun; i++) {
+        for (size_t j = 0; j < nsun; j++) {
+
+            gsl_matrix_complex_set(a_eV_t0, i, j, gsl_complex_rect(a_mat[0][i][j], 0)); // Note that setting imaginary part to zero here (not currently supported)
             gsl_matrix_complex_set(a_eV_x, i, j, gsl_complex_rect(a_mat[1][i][j], 0));
             gsl_matrix_complex_set(a_eV_y, i, j, gsl_complex_rect(a_mat[2][i][j], 0));
             gsl_matrix_complex_set(a_eV_z, i, j, gsl_complex_rect(a_mat[3][i][j], 0));
@@ -77,15 +82,20 @@ void nuSQUIDSLIV::Set_LIVCoefficient(const marray<double, 4>& a_mat, const marra
             gsl_matrix_complex_set(c_yy, i, j, gsl_complex_rect(c_mat[2][2][i][j], 0));
             gsl_matrix_complex_set(c_yz, i, j, gsl_complex_rect(c_mat[2][3][i][j], 0));
             gsl_matrix_complex_set(c_zz, i, j, gsl_complex_rect(c_mat[3][3][i][j], 0));
+
         }
     }
 
-    double theta = M_PI / 2 - dec_rad;
-    double phi = ra_rad;
+    // Convert celestial coordinates to spherical coordinates
+    double theta = M_PI / 2 - dec_rad; // Colatitude
+    double phi = ra_rad; // Longitude
+
+    // Calculate the unit propagation vectors in spherical coordinates
     double p_x = -sin(theta) * cos(phi);
     double p_y = -sin(theta) * sin(phi);
     double p_z = -cos(theta);
 
+    // Compute operators...
     gsl_matrix_complex* CPT_odd_Eindep_GSL = gsl_matrix_complex_calloc(3, 3);
     gsl_matrix_complex* CPT_odd_Edep_GSL = gsl_matrix_complex_calloc(3, 3);
     gsl_matrix_complex* CPT_even_Eindep_GSL = gsl_matrix_complex_calloc(3, 3);
@@ -121,11 +131,11 @@ void nuSQUIDSLIV::Set_LIVCoefficient(const marray<double, 4>& a_mat, const marra
     gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
 
     gsl_matrix_complex_memcpy(cterm, c_tx);
-    gsl_matrix_complex_scale(term4, gsl_complex_rect(2 * p_x, 0));
+    gsl_matrix_complex_scale(cterm, gsl_complex_rect(2 * p_x, 0));
     gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
 
     gsl_matrix_complex_memcpy(cterm, c_ty);
-    gsl_matrix_complex_scale(term5, gsl_complex_rect(2 * p_y, 0));
+    gsl_matrix_complex_scale(cterm, gsl_complex_rect(2 * p_y, 0));
     gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
     
     gsl_matrix_complex_memcpy(cterm, c_tz);
@@ -152,10 +162,10 @@ void nuSQUIDSLIV::Set_LIVCoefficient(const marray<double, 4>& a_mat, const marra
     gsl_matrix_complex_scale(cterm, gsl_complex_rect(-2 * p_y * p_z, 0));
     gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
 
-    CPT_even_Edep = squids::SU_vector(<CPT_even_Edep_GSL>);
-    CPT_even_Eindep = squids::SU_vector(<CPT_even_Eindep_GSL>);
-    CPT_odd_Eindep = squids::SU_vector(<CPT_odd_Eindep_GSL>);
-    CPT_odd_Edep = squids::SU_vector(<CPT_odd_Edep_GSL>);
+    CPT_even_Edep = squids::SU_vector(CPT_even_Edep_GSL);
+    CPT_even_Eindep = squids::SU_vector(CPT_even_Eindep_GSL);
+    CPT_odd_Eindep = squids::SU_vector(CPT_odd_Eindep_GSL);
+    CPT_odd_Edep = squids::SU_vector(CPT_odd_Edep_GSL);
 
     gsl_matrix_complex_free(a_eV_t0);
     gsl_matrix_complex_free(a_eV_x);

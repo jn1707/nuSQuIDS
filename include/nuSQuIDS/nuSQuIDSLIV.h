@@ -26,16 +26,16 @@ class nuSQUIDSLIV: public nuSQUIDS {
 
   private:
 
-    squids::SU_vector CPT_odd_Eindep_evol;
+    squids::SU_vector CPT_odd_Eindep;
     std::vector<squids::SU_vector> CPT_odd_Eindep_evol;
 
-    squids::SU_vector CPT_odd_Edep_evol;
+    squids::SU_vector CPT_odd_Edep;
     std::vector<squids::SU_vector> CPT_odd_Edep_evol;
 
-    squids::SU_vector CPT_even_Eindep_evol;
+    squids::SU_vector CPT_even_Eindep;
     std::vector<squids::SU_vector> CPT_even_Eindep_evol;
 
-    squids::SU_vector CPT_even_Edep_evol;
+    squids::SU_vector CPT_even_Edep;
     std::vector<squids::SU_vector> CPT_even_Edep_evol;
 
     // Override nuSQuIDS functions to add SME terms
@@ -80,7 +80,7 @@ class nuSQUIDSLIV: public nuSQUIDS {
     // SME param getters/setters
     //
 
-     void Set_LIVCoefficient(const marray<double,3>& a_mat, const marray<double,3>& c_mat, double ra_rad, double dec_rad);
+     void Set_LIVCoefficient(const marray<double,3>& a_mat, const marray<double,4>& c_mat, double ra_rad, double dec_rad);
 
 };
 
@@ -97,7 +97,7 @@ class nuSQUIDSLIVAtm : public nuSQUIDSAtm<nuSQUIDSLIV> {
     using nuSQUIDSAtm<nuSQUIDSLIV>::nuSQUIDSAtm;
 
     // Wrap all the getters/setters
-    void Set_LIVCoefficient(const marray<double,3>& a_mat, const marray<double,3>& c_mat, double ra_rad, double dec_rad){
+    void Set_LIVCoefficient(const marray<double,3>& a_mat, const marray<double,4>& c_mat, double ra_rad, double dec_rad){
       for(nuSQUIDSLIV& nsq : this->GetnuSQuIDS()) nsq.Set_LIVCoefficient(a_mat, c_mat, ra_rad, dec_rad);
     } 
 
