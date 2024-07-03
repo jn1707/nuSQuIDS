@@ -85,6 +85,11 @@ void nuSQUIDSLIV::Set_LIVCoefficient(const marray<double, 3>& a_mat, const marra
 
         }
     }
+    // Print the matrices
+    std::cout << "a_eV_t0: " << a_eV_t0 << std::endl;
+    std::cout << "a_eV_x: " << a_eV_x << std::endl;
+    std::cout << "a_eV_y: " << a_eV_y << std::endl;
+    std::cout << "c_ty: " << c_ty << std::endl;
 
     // Convert celestial coordinates to spherical coordinates
     double theta = M_PI / 2 - dec_rad; // Colatitude
@@ -162,6 +167,9 @@ void nuSQUIDSLIV::Set_LIVCoefficient(const marray<double, 3>& a_mat, const marra
     gsl_matrix_complex_scale(cterm, gsl_complex_rect(-2 * p_y * p_z, 0));
     gsl_matrix_complex_add(CPT_even_Edep_GSL, cterm);
 
+    // Print the matrices
+    std::cout << "CPT_odd_Eindep_GSL: " << CPT_odd_Eindep_GSL << std::endl;
+    std::cout << "CPT_even_Edep_GSL: " << CPT_even_Edep_GSL << std::endl;
     CPT_even_Edep = squids::SU_vector(CPT_even_Edep_GSL);
     CPT_even_Eindep = squids::SU_vector(CPT_even_Eindep_GSL);
     CPT_odd_Eindep = squids::SU_vector(CPT_odd_Eindep_GSL);
